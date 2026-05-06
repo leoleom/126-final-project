@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/leoleom/126-final-project#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/cli": "^4.2.4",
     "express": "^5.2.1"
   },
