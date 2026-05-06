@@ -1,0 +1,30 @@
+{
+  "name": "126-final-project",
+  "version": "1.0.0",
+  "description": "ERD: <img width=\"6940\" height=\"5263\" alt=\"FinalProj_ERD\" src=\"https://github.com/user-attachments/assets/3c849236-bed0-43d1-a56e-6f4840c39d56\" />",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leoleom/126-final-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/leoleom/126-final-project/issues"
+  },
+  "homepage": "https://github.com/leoleom/126-final-project#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.2.4",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4"
+  }
+}
