@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import AuthLayout from "../components/authLayout";
+import AuthLayout from "../../../src/frontend/components/authLayout";
 
 function Login() {
   return (
