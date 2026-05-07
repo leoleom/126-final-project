@@ -3,6 +3,15 @@ import { Link, useLocation } from "react-router-dom";
 function AdminNavbar() {
   const location = useLocation();
 
+  // --- SKELETON ACTION LISTENER ---
+  const handleNavClick = (label) => {
+    console.log(`Admin Nav item clicked: ${label}`);
+  };
+
+  const handleLogout = () => {
+    console.log("Logout button clicked");
+  };
+
   const adminItems = [
     { label: "Overview", path: "/admin" },
     { label: "Users", path: "/admin/users" },
@@ -25,6 +34,7 @@ function AdminNavbar() {
             <Link
               key={item.label}
               to={item.path}
+              onClick={() => handleNavClick(item.label)} // Added listener
               className={`flex min-h-12 items-center rounded-lg px-6 ${
                 isActive
                   ? "bg-[#e6f0ea] text-[#111827]"
@@ -39,6 +49,7 @@ function AdminNavbar() {
 
       <Link
         to="/"
+        onClick={handleLogout} // Added listener
         className="mt-40 block px-6 text-sm font-extrabold"
       >
         Logout
