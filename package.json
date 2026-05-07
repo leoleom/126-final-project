@@ -4,7 +4,9 @@
   "description": "ERD: <img width=\"6940\" height=\"5263\" alt=\"FinalProj_ERD\" src=\"https://github.com/user-attachments/assets/3c849236-bed0-43d1-a56e-6f4840c39d56\" />",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -21,7 +23,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/cli": "^4.2.4",
-    "express": "^5.2.1"
+    "@tailwindcss/vite": "^4.2.4",
+    "@vitejs/plugin-react": "^6.0.1",
+    "express": "^5.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vite": "^8.0.10"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.0",
