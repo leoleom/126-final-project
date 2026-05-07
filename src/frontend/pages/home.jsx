@@ -12,7 +12,7 @@ function Home() {
             </div>
 
             <nav className="flex gap-14 text-sm font-bold text-[#111827]">
-              <Link to="/guidelines">Guidelines</Link>
+              <Link to="/guidelines"></Link>
             </nav>
           </header>
 

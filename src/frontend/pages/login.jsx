@@ -1,7 +1,32 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import AuthLayout from "../../../src/frontend/components/authLayout";
 
-function Login() {
+function Login({ setUser }) {
+  const navigate = useNavigate();
+
+  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleLogin() {
+    if (emailOrUsername === "admin" && password === "admin123") {
+      setUser({
+        username: "admin",
+        role: "admin",
+      });
+
+      navigate("/feed");
+      return;
+    }
+
+    setUser({
+      username: emailOrUsername,
+      role: "user",
+    });
+
+    navigate("/feed");
+  }
+
   return (
     <AuthLayout>
       <Link
@@ -28,6 +53,8 @@ function Login() {
           <input
             type="text"
             placeholder="Enter your email or username"
+            value={emailOrUsername}
+            onChange={(e) => setEmailOrUsername(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -40,6 +67,8 @@ function Login() {
           <input
             type="password"
             placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -60,6 +89,7 @@ function Login() {
 
         <button
           type="button"
+          onClick={handleLogin}
           className="h-11 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
         >
           Log In

@@ -1,7 +1,32 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import AuthLayout from "../../../src/frontend/components/authLayout";
 
-function Signup() {
+function Signup({ setUser }) {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  function handleSignup() {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    const newUser = {
+      email,
+      username,
+      role: "user",
+    };
+
+    setUser(newUser);
+
+    navigate("/feed");
+  }
+
   return (
     <AuthLayout>
       <Link
@@ -11,17 +36,25 @@ function Signup() {
         ← Back
       </Link>
 
-      <h1 className="text-3xl font-extrabold text-[#3f6f4f]"> Create an account </h1>
+      <h1 className="text-3xl font-extrabold text-[#3f6f4f]">
+        Create an account
+      </h1>
 
-      <p className="mt-3 text-sm text-[#6b7280]"> Join the community.</p>
+      <p className="mt-3 text-sm text-[#6b7280]">
+        Join the community.
+      </p>
 
       <form className="mt-6 space-y-2">
         <div>
-          <label className="text-sm font-bold text-[#111827]"> Email</label>
+          <label className="text-sm font-bold text-[#111827]">
+            Email
+          </label>
 
           <input
             type="email"
             placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -34,6 +67,8 @@ function Signup() {
           <input
             type="text"
             placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -46,6 +81,8 @@ function Signup() {
           <input
             type="password"
             placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -58,6 +95,8 @@ function Signup() {
           <input
             type="password"
             placeholder="Confirm your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </div>
@@ -75,6 +114,7 @@ function Signup() {
 
         <button
           type="button"
+          onClick={handleSignup}
           className="h-10 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
         >
           Sign Up
