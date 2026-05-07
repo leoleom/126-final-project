@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar";
 import PostCard from "../components/postCard";
@@ -25,6 +24,21 @@ function Profile({ user }) {
     },
   ];
 
+  // --- SKELETON ACTION LISTENERS ---
+
+  const handleEditProfileClick = () => {
+    console.log("Edit Profile button clicked");
+  };
+
+  const handleLike = (postId) => {
+    console.log(`Like button clicked for post: ${postId}`);
+  };
+
+  const handleView = (postId) => {
+    console.log(`View action triggered for post: ${postId}`);
+  };
+
+  // --- DATA CALCULATIONS ---
   const totalPosts = userPosts.length;
   const totalLikes = userPosts.reduce((sum, post) => sum + post.likes, 0);
   const totalViews = userPosts.reduce((sum, post) => sum + post.views, 0);
@@ -61,16 +75,15 @@ function Profile({ user }) {
               <div className="flex justify-between pt-5">
                 <div className="ml-40">
                   <h1 className="text-3xl font-extrabold">@{username}</h1>
-
                   <p className="mt-2 text-sm font-semibold text-[#6b7280]">
                     {displayName}
                   </p>
-
                   <p className="mt-4 text-sm text-[#374151]">{bio}</p>
                 </div>
 
                 <Link
                   to="/settings"
+                  onClick={handleEditProfileClick} // Added listener here
                   className="mt-2 h-11 rounded-lg border border-[#e5e7eb] bg-white px-8 py-3 text-sm font-extrabold"
                 >
                   Edit Profile
@@ -93,7 +106,6 @@ function Profile({ user }) {
               {userPosts.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[#d1d5db] bg-white p-10 text-center">
                   <h3 className="text-xl font-extrabold">No posts yet</h3>
-
                   <p className="mt-3 text-sm text-[#6b7280]">
                     Your posts will appear here.
                   </p>
@@ -110,6 +122,8 @@ function Profile({ user }) {
                     tags={post.tags}
                     likes={post.likes}
                     views={post.views}
+                    onLike={() => handleLike(post.id)} // Added listener
+                    onView={() => handleView(post.id)} // Added listener
                   />
                 ))
               )}
@@ -131,5 +145,3 @@ function ProfileStat({ value, label }) {
 }
 
 export default Profile;
-
-
