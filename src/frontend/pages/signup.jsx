@@ -10,7 +10,11 @@ function Signup({ setUser }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  function handleSignup() {
+  function handleSignup(e) {
+    e.preventDefault();
+
+    console.log("Signup button clicked");
+
     if (password !== confirmPassword) {
       alert("Passwords do not match.");
       return;
@@ -23,7 +27,6 @@ function Signup({ setUser }) {
     };
 
     setUser(newUser);
-
     navigate("/feed");
   }
 
@@ -44,7 +47,8 @@ function Signup({ setUser }) {
         Join the community.
       </p>
 
-      <form className="mt-6 space-y-2">
+      {/* Moved onClick from button to onSubmit here */}
+      <form className="mt-6 space-y-2" onSubmit={handleSignup}>
         <div>
           <label className="text-sm font-bold text-[#111827]">
             Email
@@ -112,9 +116,9 @@ function Signup({ setUser }) {
           </span>.
         </p>
 
+        {/* Changed to type="submit" */}
         <button
-          type="button"
-          onClick={handleSignup}
+          type="submit"
           className="h-10 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
         >
           Sign Up
