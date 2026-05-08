@@ -42,7 +42,7 @@ function App() {
 
         <Route path="/guidelines" element={<Guidelines />} />
         <Route path="/feed" element={<Feed user={user} />} />
-        <Route path="/create-post" element={<CreatePost />} />
+        <Route path="/create-post" element={<CreatePost user={user} />} />
         <Route path="/post/:id" element={<ExpandedPost />} />
         <Route path="/settings" element={<Settings user={user} setUser={setUser} />} />
         <Route path="/profile" element={<Profile user={user} />} />
