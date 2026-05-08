@@ -1,4 +1,6 @@
 import { Link, useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
+import "trix/dist/trix.css";
 
 function ExpandedPost() {
   const { id } = useParams();
@@ -77,9 +79,10 @@ function ExpandedPost() {
               ))}
             </div>
 
-            <p className="mt-6 text-sm leading-6 text-[#374151]">
-              {post.body}
-            </p>
+            <div 
+              className="trix-content mt-6 text-sm leading-6 text-[#374151]"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.body) }}
+            />
 
             <div className="mt-6 flex gap-6 text-sm font-bold">
               <span>{post.likes} Likes</span>

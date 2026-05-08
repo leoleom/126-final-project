@@ -90,10 +90,11 @@ function Feed({ user }) {
   const filteredPosts = posts
     .filter((post) => {
       const query = searchQuery.toLowerCase();
+      const plainBody = post.body.replace(/<[^>]*>/g, "");
 
       return (
         post.title.toLowerCase().includes(query) ||
-        post.body.toLowerCase().includes(query) ||
+        plainBody.toLowerCase().includes(query) ||
         post.username.toLowerCase().includes(query) ||
         post.tags.some((tag) => tag.toLowerCase().includes(query))
       );
@@ -163,7 +164,7 @@ function Feed({ user }) {
                       username={post.username}
                       time={formatTimeAgo(post.createdAt)}
                       title={post.title}
-                      body={post.body}
+                      body={post.body.replace(/<[^>]*>/g, "")}
                       tags={post.tags}
                       likes={post.likes}
                       views={post.views}

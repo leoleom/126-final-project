@@ -1,6 +1,65 @@
 import { Link } from "react-router-dom";
 
+import { useEffect, useRef } from "react";
+import "trix/dist/trix.css";
+import "trix"
+
 function CreatePost() {
+  const editorRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const input = inputRef.current;
+    if(!editor || !input) return;
+
+    const handleAttachmentAdd = (e) => {
+      const attachment = e.attachment;
+      if (attachment.file){
+        uploadFile(attachment);
+      }
+    }
+
+    const handleAttachmentRemove = (e) => {
+      console.log("Attachment removed:", e.attachment);
+      // delete file from server code
+    }
+
+    editor.addEventListener("trix-attachment-add", handleAttachmentAdd);
+    editor.addEventListener("trix-attachment-remove", handleAttachmentRemove);
+
+    return () => {
+      editor.removeEventListener("trix-attachment-add", handleAttachmentAdd);
+      editor.removeEventListener("trix-attachment-remove", handleAttachmentRemove);
+    };
+  }, []);
+
+  const uploadFile = async(attachment) => {
+    const formData = new FormData();
+    formData.append("file", attachment.file);
+
+    try{
+      const res = await fetch("/upload", {method: "POST", body: formData});
+      const data = await res.json();
+
+      attachment.setAttributes({
+        url: data.url,
+        href: data.url
+      });
+
+    // { "url": "https://your-storage.com/files/image.png" }
+    // backend endpoint should return JSON like above
+
+    } catch (err){
+      console.error("Upload failed:", err);
+    }
+  }
+
+  const handlePublish = () => {
+    const content = inputRef.current?.value;
+    console.log("Publishing:", content);
+  };
+
   return (
     <div className="min-h-screen bg-[#f7f8f7] px-10 py-10 text-[#1f2937]">
       <main className="mx-auto max-w-[980px] rounded-xl bg-white px-16 py-12">
@@ -57,28 +116,14 @@ function CreatePost() {
 
         <section className="mt-10">
           <label className="text-sm font-extrabold">Write your post...</label>
-
-          <textarea
-            placeholder="Share your thoughts..."
-            className="mt-3 h-56 w-full resize-none rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
-          />
-        </section>
-
-        <section className="mt-10">
-          <label className="text-sm font-extrabold">
-            Add images (optional)
-          </label>
-
-          <div className="mt-4 grid grid-cols-3 gap-6">
-            {[1, 2, 3].map((item) => (
-              <button
-                key={item}
-                className="h-40 rounded-lg bg-[#e6f0ea] text-sm font-semibold text-[#6b7280]"
-              >
-                Upload image
-              </button>
-            ))}
-          </div>
+          
+            <input id="trix-post-input" ref={inputRef} type="hidden" name="content"/>
+            <trix-editor 
+                ref={editorRef} 
+                input="trix-post-input" 
+                placeholder="Share your thoughts..."
+                class="mt-3 w-full min-h-56 rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
+            />
         </section>
       </main>
     </div>
