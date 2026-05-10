@@ -16,7 +16,15 @@ function TopBar({ user, searchQuery, setSearchQuery }) {
       </div>
 
       <Link to="/profile" className="flex items-center gap-4">
-        <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+        {user?.avatar_url ? (
+          <img
+            src={user.avatar_url}
+            alt={user.username}
+            className="h-11 w-11 rounded-full object-cover"
+          />
+        ) : (
+          <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+        )}
         <span className="text-sm font-extrabold">@{user?.username}</span>
       </Link>
     </header>
