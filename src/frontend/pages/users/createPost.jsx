@@ -1,130 +1,398 @@
-import { Link } from "react-router-dom";
-
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../../services/supabaseClient";
 import "trix/dist/trix.css";
-import "trix"
+import "trix";
 
-function CreatePost() {
+function CreatePost({ user, existingPost = null }) {
+  const navigate = useNavigate();
+  const isDraft = existingPost !== null;
+
+  const [title, setTitle] = useState(existingPost?.title ?? "");
+  const [content, setContent] = useState(existingPost?.content ?? "");
+  const [isAnonymous, setIsAnonymous] = useState(existingPost?.is_anonymous ?? false);
+  const [selectedTags, setSelectedTags] = useState(existingPost?.tags ?? []);
+
+  const [availableTags, setAvailableTags] = useState([]);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+
+  useEffect(() => {
+    async function fetchTags() {
+      const { data, error } = await supabase
+        .from("tags")
+        .select("name")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching tags:", error);
+        return;
+      }
+
+      setAvailableTags(data.map((t) => t.name));
+    }
+
+    fetchTags();
+  }, []);
+
+  useEffect(() => {
+    if (existingPost?.content && editorRef.current) {
+      editorRef.current.editor.loadHTML(existingPost.content);
+    }
+  }, []);
+
   const editorRef = useRef(null);
   const inputRef = useRef(null);
 
+  // ── TRIX SETUP ───────────────────────────────────────────
   useEffect(() => {
     const editor = editorRef.current;
     const input = inputRef.current;
-    if(!editor || !input) return;
+    if (!editor || !input) return;
 
     const handleAttachmentAdd = (e) => {
-      const attachment = e.attachment;
-      if (attachment.file){
-        uploadFile(attachment);
-      }
-    }
-
+      if (e.attachment.file) uploadFile(e.attachment);
+    };
     const handleAttachmentRemove = (e) => {
       console.log("Attachment removed:", e.attachment);
-      // delete file from server code
-    }
+    };
+    
+    // Sync trix content into our content state
+    const handleChange = () => {
+      setContent(input.value);
+    };
 
     editor.addEventListener("trix-attachment-add", handleAttachmentAdd);
     editor.addEventListener("trix-attachment-remove", handleAttachmentRemove);
+    editor.addEventListener("trix-change", handleChange);
 
     return () => {
       editor.removeEventListener("trix-attachment-add", handleAttachmentAdd);
       editor.removeEventListener("trix-attachment-remove", handleAttachmentRemove);
+      editor.removeEventListener("trix-change", handleChange);
     };
   }, []);
 
-  const uploadFile = async(attachment) => {
+  const uploadFile = async (attachment) => {
     const formData = new FormData();
     formData.append("file", attachment.file);
-
-    try{
-      const res = await fetch("/upload", {method: "POST", body: formData});
+    try {
+      const res = await fetch("/upload", { method: "POST", body: formData });
       const data = await res.json();
-
-      attachment.setAttributes({
-        url: data.url,
-        href: data.url
-      });
-
-    // { "url": "https://your-storage.com/files/image.png" }
-    // backend endpoint should return JSON like above
-
-    } catch (err){
+      attachment.setAttributes({ url: data.url, href: data.url });
+    } catch (err) {
       console.error("Upload failed:", err);
     }
+  };
+
+  // ── TAG HANDLERS ─────────────────────────────────────────
+  function handleAddTag(tag) {
+    if (!selectedTags.includes(tag)) setSelectedTags([...selectedTags, tag]);
+    setShowTagPicker(false);
   }
 
-  const handlePublish = () => {
-    const content = inputRef.current?.value;
-    console.log("Publishing:", content);
-  };
+  function handleRemoveTag(tag) {
+    setSelectedTags(selectedTags.filter((t) => t !== tag));
+  }
+
+  // ── VALIDATION ───────────────────────────────────────────
+  function validate() {
+    if (!title.trim()) { setError("Please add a title."); return false; }
+    if (!content.trim()) { setError("Please write something in your post."); return false; }
+    return true;
+  }
+
+  // ── TAG INSERT HELPER ────────────────────────────────────
+  async function insertPostTags(postId) {
+  const { data: tagRows, error: tagFetchError } = await supabase
+    .from("tags")
+    .select("id, name")
+    .in("name", selectedTags);
+
+  if (tagRows && tagRows.length > 0) {
+    const { error: insertError } = await supabase
+      .from("post_tags")
+      .insert(
+        tagRows.map((tag) => ({ post_id: postId, tag_id: tag.id }))
+      );
+
+  }
+}
+
+  // ── PUBLISH ──────────────────────────────────────────────
+  async function handlePublish() {
+    if (!validate()) return;
+    setError("");
+    setLoading(true);
+
+    if (isDraft) {
+      const { error: updateError } = await supabase
+        .from("posts")
+        .update({
+          title: title.trim(),
+          content: content.trim(),
+          is_anonymous: isAnonymous,
+          status: isAnonymous ? "pending" : "live"
+        })
+        .eq("id", existingPost.id);
+
+      if (updateError) { setError(updateError.message); setLoading(false); return; }
+
+      await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
+      if (selectedTags.length > 0) await insertPostTags(existingPost.id);
+
+    } else {
+      const { data: post, error: postError } = await supabase
+        .from("posts")
+        .insert({
+          author_id: user.id,
+          title: title.trim(),
+          content: content.trim(),
+          is_anonymous: isAnonymous,
+          status: isAnonymous ? "pending" : "live"
+        })
+        .select()
+        .single();
+
+      if (postError) { setError(postError.message); setLoading(false); return; }
+      if (selectedTags.length > 0) await insertPostTags(post.id);
+    }
+
+    setLoading(false);
+    navigate("/feed");
+  }
+
+  // ── SAVE DRAFT ───────────────────────────────────────────
+  async function handleSaveDraft() {
+    if (!title.trim() && !content.trim()) {
+      setError("Write something before saving a draft.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    if (isDraft) {
+      const { error: updateError } = await supabase
+        .from("posts")
+        .update({
+          title: title.trim(),
+          content: content.trim(),
+          is_anonymous: isAnonymous,
+          status: "draft",
+        })
+        .eq("id", existingPost.id);
+
+      if (updateError) { setError(updateError.message); setLoading(false); return; }
+
+      await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
+      if (selectedTags.length > 0) await insertPostTags(existingPost.id);
+
+    } else {
+      const { data: post, error: postError } = await supabase
+        .from("posts")
+        .insert({
+          author_id: user.id,
+          title: title.trim(),
+          content: content.trim(),
+          is_anonymous: isAnonymous,
+          status: "draft",
+        })
+        .select()
+        .single();
+
+      if (postError || !post) {
+        setError(postError?.message ?? "Failed to save draft. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (selectedTags.length > 0) await insertPostTags(post.id);
+    }
+
+    setLoading(false);
+    navigate("/drafts");
+  }
+
+  // ── DELETE DRAFT ─────────────────────────────────────────
+  async function handleDeleteDraft() {
+    setLoading(true);
+    await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
+    const { error: deleteError } = await supabase
+      .from("posts").delete().eq("id", existingPost.id);
+
+    if (deleteError) { setError(deleteError.message); setLoading(false); return; }
+    setLoading(false);
+    navigate("/drafts");
+  }
+
+  // ── CANCEL ───────────────────────────────────────────────
+  function handleCancel() {
+    if (!title.trim() && !content.trim()) {
+      navigate(isDraft ? "/drafts" : "/feed");
+      return;
+    }
+    const leave = window.confirm("Discard changes? Any unsaved edits will be lost.");
+    if (leave) navigate(isDraft ? "/drafts" : "/feed");
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] px-10 py-10 text-[#1f2937]">
       <main className="mx-auto max-w-[980px] rounded-xl bg-white px-16 py-12">
-        <header className="flex items-center justify-between">
-          <Link to="/feed" className="text-sm font-extrabold text-[#374151]">
-            ← Back
-          </Link>
 
-          <label className="flex items-center gap-2 text-sm font-bold">
-            <input type="checkbox" />
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="text-sm font-extrabold text-[#374151] hover:text-red-500"
+          >
+            ← Cancel
+          </button>
+
+          <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+            />
             Post anonymously
           </label>
 
-          <div className="flex gap-6">
-            <Link
-              to="/feed"
-              className="flex h-11 w-28 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold"
-            >
-              Cancel
-            </Link>
+          <div className="flex gap-3">
+            {isDraft && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={loading}
+                className="flex h-11 w-32 items-center justify-center rounded-lg border border-red-200 text-sm font-extrabold text-red-500 hover:bg-red-50 disabled:opacity-50"
+              >
+                Delete Draft
+              </button>
+            )}
 
-            <button className="h-11 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white">
-              Publish
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Save Draft"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={loading}
+              className="h-11 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white disabled:opacity-50"
+            >
+              {loading ? "Publishing..." : "Publish"}
             </button>
           </div>
         </header>
 
+        {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+
+        {/* Delete confirmation banner */}
+        {showDeleteConfirm && (
+          <div className="mt-6 flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 px-6 py-4">
+            <p className="flex-1 text-sm font-semibold text-red-600">
+              Are you sure you want to delete this draft? This cannot be undone.
+            </p>
+            <button
+              type="button"
+              onClick={handleDeleteDraft}
+              disabled={loading}
+              className="rounded-lg bg-red-500 px-4 py-2 text-sm font-extrabold text-white disabled:opacity-50"
+            >
+              {loading ? "Deleting..." : "Yes, delete"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-lg border border-red-200 px-4 py-2 text-sm font-extrabold text-red-500"
+            >
+              Keep it
+            </button>
+          </div>
+        )}
+
+        {/* Title */}
         <section className="mt-16">
           <label className="text-sm font-extrabold">Post Title</label>
           <input
             type="text"
             placeholder="Write your title here..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="mt-3 h-12 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </section>
 
+        {/* Tags */}
         <section className="mt-10">
           <label className="text-sm font-extrabold">Tags</label>
-
-          <div className="mt-4 flex gap-6">
-            {["academics", "students", "rant"].map((tag) => (
+          <div className="mt-4 flex flex-wrap gap-3 items-center">
+            {selectedTags.map((tag) => (
               <span
                 key={tag}
-                className="flex h-8 w-40 items-center justify-between rounded-lg bg-[#e6f0ea] px-4 text-xs font-bold text-[#3f6f4f]"
+                className="flex h-8 items-center gap-2 rounded-lg bg-[#e6f0ea] px-4 text-xs font-bold text-[#3f6f4f]"
               >
                 {tag}
-                <button>x</button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag)}
+                  className="hover:text-red-500"
+                >
+                  ✕
+                </button>
               </span>
             ))}
 
-            <button className="text-lg font-bold text-[#3f6f4f]">+</button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowTagPicker(!showTagPicker)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e7eb] text-lg font-bold text-[#3f6f4f] hover:bg-[#e6f0ea]"
+              >
+                +
+              </button>
+
+              {showTagPicker && (
+                <div className="absolute left-0 top-10 z-10 w-48 rounded-lg border border-[#e5e7eb] bg-white shadow-md">
+                  {availableTags.filter((tag) => !selectedTags.includes(tag)).map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleAddTag(tag)}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-[#f3f4f6]"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                  {availableTags.filter((tag) => !selectedTags.includes(tag)).length === 0 && (
+                    <p className="px-4 py-2 text-xs text-[#9ca3af]">All tags selected</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
+        {/* Content — Trix editor */}
         <section className="mt-10">
           <label className="text-sm font-extrabold">Write your post...</label>
-          
-            <input id="trix-post-input" ref={inputRef} type="hidden" name="content"/>
-            <trix-editor 
-                ref={editorRef} 
-                input="trix-post-input" 
-                placeholder="Share your thoughts..."
-                class="mt-3 w-full min-h-56 rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
-            />
+          <input id="trix-post-input" ref={inputRef} type="hidden" name="content" />
+          <trix-editor
+            ref={editorRef}
+            input="trix-post-input"
+            placeholder="Share your thoughts..."
+            class="mt-3 w-full min-h-56 rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
+          />
         </section>
+
       </main>
     </div>
   );
