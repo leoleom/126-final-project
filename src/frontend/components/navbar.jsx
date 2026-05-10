@@ -1,7 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
-function Navbar({user}) {
+function Navbar({ user }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { label: "Home", path: "/feed" },
@@ -15,6 +17,11 @@ function Navbar({user}) {
       ? [{ label: "Admin Dashboard", path: "/admin" }]
       : []),
   ];
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/");
+  }
 
   return (
     <aside className="border-r border-[#e5e7eb] px-9 py-10">
@@ -49,9 +56,12 @@ function Navbar({user}) {
         })}
       </nav>
 
-      <Link to="/" className="mt-28 block px-7 text-sm font-extrabold">
+      <button
+        onClick={handleLogout}
+        className="mt-28 block px-7 text-sm font-extrabold text-left text-[#111827] hover:text-red-500"
+      >
         Logout
-      </Link>
+      </button>
     </aside>
   );
 }
