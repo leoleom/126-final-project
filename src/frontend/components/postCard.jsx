@@ -12,6 +12,7 @@ function PostCard({
   views,
   onLike,
   onView,
+  isDraft = false,
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -53,16 +54,27 @@ function PostCard({
           )}
         </div>
       </div>
-
-      <Link to={`/post/${id}`} onClick={onView}>
-        <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
-          {title}
-        </h3>
-
-        <p className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151]">
-          {body}
-        </p>
-      </Link>
+        {isDraft ? (
+                <div onClick={onView} className="cursor-pointer">
+                  <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+                    {title}
+                  </h3>
+                  <div
+                    className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+                    dangerouslySetInnerHTML={{ __html: body }}
+                  />
+                </div>
+              ) : (
+                <Link to={`/post/${id}`} onClick={onView}>
+                  <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+                    {title}
+                  </h3>
+                  <div
+                    className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+                    dangerouslySetInnerHTML={{ __html: body }}
+                  />
+                </Link>
+              )}
 
       <div className="mt-7 flex flex-wrap gap-4">
         {tags.map((tag) => (
