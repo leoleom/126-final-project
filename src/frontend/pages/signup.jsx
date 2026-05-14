@@ -56,6 +56,7 @@ function Signup() {
       avatar_url: null,
       bio: null,
       role: "user",
+      password: password,
     });
 
     if (insertError){
