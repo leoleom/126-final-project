@@ -1,14 +1,17 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
-function Navbar({user}) {
+function Navbar({ user }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  // Sidebar navigation items (admin dashboard shown only for admins)
   const navItems = [
     { label: "🏠︎ Home", path: "/feed" },
-    { label: " Profile", path: "/profile" },
+    { label: "Profile", path: "/profile" },
     { label: "Bookmarks", path: "/bookmarks" },
-    { label: "✉︎ Drafts", path: "/drafts" },
-    { label: " Guidelines", path: "/guidelines" },
+    { label: "Drafts", path: "/drafts" },
+    { label: "Guidelines", path: "/guidelines" },
     { label: "Settings", path: "/settings" },
 
     ...(user?.role === "admin"
@@ -16,12 +19,19 @@ function Navbar({user}) {
       : []),
   ];
 
+  // Logs user out and redirects to landing page
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/");
+  }
+
   return (
     <aside className="border-r border-[#e5e7eb] px-9 py-10">
       <h1 className="text-xl font-extrabold text-[#3f6f4f]">
         Better Better UPV
       </h1>
 
+      {/* Quick access to create post */}
       <Link
         to="/create-post"
         className="mt-16 flex h-14 w-full items-center justify-center rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
@@ -29,6 +39,7 @@ function Navbar({user}) {
         + Create Post
       </Link>
 
+      {/* Sidebar navigation */}
       <nav className="mt-8 space-y-3 text-sm font-extrabold">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -49,9 +60,13 @@ function Navbar({user}) {
         })}
       </nav>
 
-      <Link to="/" className="mt-28 block px-7 text-sm font-extrabold text-red-500">
+      {/* Logout button */}
+      <button
+        onClick={handleLogout}
+        className="mt-28 block px-7 text-sm font-extrabold text-left text-[#111827] hover:text-red-500"
+      >
         Logout
-      </Link>
+      </button>
     </aside>
   );
 }

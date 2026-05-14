@@ -12,15 +12,22 @@ function PostCard({
   views,
   onLike,
   onView,
+  isDraft = false,
 }) {
+  // Controls the visibility of the Edit/Report dropdown menu
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <article className="relative rounded-xl border border-[#e5e7eb] bg-white p-7">
+      
+      {/* Post header: user info + action menu */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
+          
+          {/* Placeholder profile picture */}
           <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
 
+          {/* Username and timestamp */}
           <div>
             <p className="text-sm font-extrabold text-[#111827]">
               {username}
@@ -32,14 +39,17 @@ function PostCard({
           </div>
         </div>
 
+        {/* Post action dropdown */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => setShowMenu(!showMenu)}
             className="text-xl font-bold text-[#6b7280]"
           >
             ⋯
           </button>
 
+          {/* Dropdown menu appears when toggled */}
           {showMenu && (
             <div className="absolute right-0 top-8 w-36 rounded-lg border border-[#e5e7eb] bg-white shadow-sm">
               <button className="block w-full px-4 py-3 text-left text-sm hover:bg-[#f3f4f6]">
@@ -54,16 +64,33 @@ function PostCard({
         </div>
       </div>
 
-      <Link to={`/post/${id}`} onClick={onView}>
-        <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
-          {title}
-        </h3>
+      {/* Draft posts stay local and do not route to expanded post */}
+      {isDraft ? (
+        <div onClick={onView} className="cursor-pointer">
+          <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+            {title}
+          </h3>
 
-        <p className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151]">
-          {body}
-        </p>
-      </Link>
+          <div
+            className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+            dangerouslySetInnerHTML={{ __html: body }}
+          />
+        </div>
+      ) : (
+        /* Published posts route to expanded post page */
+        <Link to={`/post/${id}`} onClick={onView}>
+          <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+            {title}
+          </h3>
 
+          <div
+            className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+            dangerouslySetInnerHTML={{ __html: body }}
+          />
+        </Link>
+      )}
+
+      {/* Post tags */}
       <div className="mt-7 flex flex-wrap gap-4">
         {tags.map((tag) => (
           <span
@@ -75,7 +102,10 @@ function PostCard({
         ))}
       </div>
 
+      {/* Post engagement metrics */}
       <div className="mt-6 flex gap-12 text-sm font-bold text-[#9ca3af]">
+        
+        {/* Like button */}
         <button
           type="button"
           onClick={onLike}
@@ -84,7 +114,8 @@ function PostCard({
           ♥ {likes} likes
         </button>
 
-        <span> 👁 {views} views</span>
+        {/* View counter */}
+        <span>👁 {views} views</span>
       </div>
     </article>
   );
