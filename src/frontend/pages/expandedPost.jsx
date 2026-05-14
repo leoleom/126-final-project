@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 
@@ -23,76 +22,81 @@ function ExpandedPost({ user }) {
   async function fetchPost() {
     setLoading(true);
 
-    const { data, error: fetchError } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        is_anonymous,
-        created_at,
-        author_id,
-        author:users (id, username, display_name, avatar_url, bio, created_at),
-        post_tags (tags (name)),
-        votes (id, vote_type)
-      `)
-      .eq("id", id)
-      .single();
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/posts/${id}`
+      );
+      const data = await response.json();
 
-    if (fetchError || !data) {
-      setError("Post not found.");
-      setLoading(false);
-      return;
+      if (!response.ok) {
+        setError("Post not found.");
+        setLoading(false);
+        return;
+      }
+
+      setPost(data.post);
+      setAuthorPostCount(data.authorPostCount);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to load post.");
     }
 
-    // fetch author post count
-    const { count } = await supabase
-      .from("posts")
-      .select("*", { count: "exact", head: true })
-      .eq("author_id", data.author_id)
-      .eq("status", "live");
-
-    setAuthorPostCount(count ?? 0);
-    setPost(data);
     setLoading(false);
   }
 
   async function fetchComments() {
-    const { data, error: fetchError } = await supabase
-      .from("comments")
-      .select(`
-        id,
-        content,
-        created_at,
-        author:users (username, display_name, avatar_url)
-      `)
-      .eq("post_id", id)
-      .order("created_at", { ascending: false });
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/posts/${id}/comments`
+      );
+      const data = await response.json();
 
-    if (!fetchError) setComments(data ?? []);
+      setComments(data ?? []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
   }
 
   async function handleAddComment() {
-    if (!newComment.trim()) return;
-    setCommentLoading(true);
-
-    const { error: insertError } = await supabase
-      .from("comments")
-      .insert({
-        post_id: id,
-        author_id: user.id,
-        content: newComment.trim(),
-      });
-
-    if (insertError) {
-      console.error("Error adding comment:", insertError);
-      setCommentLoading(false);
+    if (!user) {
+      console.error("User not loaded");
       return;
     }
 
-    setNewComment("");
+    if (!newComment.trim()) return;
+
+    setCommentLoading(true);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/posts/${id}/comments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            author_id: user.id,
+            content: newComment,
+          }),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data.error);
+        setCommentLoading(false);
+        return;
+      }
+
+      setNewComment("");
+
+      fetchComments();
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    }
+
     setCommentLoading(false);
-    fetchComments(); // refresh comments
   }
 
   function formatTimeAgo(createdAt) {
@@ -206,7 +210,11 @@ function ExpandedPost({ user }) {
 
                   {/* Add comment */}
                   <div className="mt-6 flex gap-4">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-[#d1d5db]" />
+                    {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.username} className="h-9 w-9 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-9 w-9 shrink-0 rounded-full bg-[#d1d5db]" />
+                      )}
                     <div className="flex flex-1 gap-3">
                       <input
                         type="text"
