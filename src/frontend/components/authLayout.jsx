@@ -1,9 +1,10 @@
+import treesImage from "../public/ll-trees.png";
 function AuthLayout({ children }) {
   return (
     <div className="flex h-screen bg-[#f7f8f7]">
       <section className="relative hidden w-[40%] overflow-hidden lg:block">
         <img
-          src="/ll-trees.png"
+          src={treesImage}
           alt="Campus trees"
           className="h-[100%] w-full object-cover"
         />
