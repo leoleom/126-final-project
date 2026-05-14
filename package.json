@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "eslint .",
     "preview": "vite preview"
   },
   "repository": {
@@ -23,16 +24,19 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/cli": "^4.2.4",
-    "@tailwindcss/vite": "^4.2.4",
-    "@vitejs/plugin-react": "^6.0.1",
+    "dompurify": "^3.4.2",
     "express": "^5.2.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "vite": "^8.0.10"
+    "react-router-dom": "^7.15.0",
+    "trix": "^2.1.18"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.14",
-    "tailwindcss": "^4.2.4"
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.11"
   }
 }
