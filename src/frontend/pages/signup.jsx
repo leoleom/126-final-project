@@ -1,29 +1,70 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import AuthLayout from "../../../src/frontend/components/authLayout";
+import AuthLayout from "../components/authLayout";
+import { supabase } from "../services/supabaseClient";
 
-function Signup({ setUser }) {
+function Signup() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  function handleSignup() {
-    if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+  async function handleSignup() {
+    setError("");
+
+    if (password !== confirmPassword){
+      setError("Passwords do not match.")
       return;
     }
 
-    const newUser = {
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setError("Password must contain at least one number.");
+      return;
+    }
+
+    if (!email.endsWith("@up.edu.ph")){
+      setError("Only @up.edu.ph email addresses are allowed.")
+      return;
+    }
+    setLoading(true);
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
-      username,
-      role: "user",
+     password
+    });
+  
+    if (signUpError){
+      setError(signUpError.message);
+      setLoading(false);
+      return;
     };
 
-    setUser(newUser);
+    const { error: insertError } = await supabase
+    .from("users").insert({
+      id: data.user.id,
+      email: email,
+      display_name: username,
+      username, username,
+      avatar_url: null,
+      bio: null,
+      role: "user",
+    });
 
+    if (insertError){
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
     navigate("/feed");
   }
 
@@ -43,6 +84,10 @@ function Signup({ setUser }) {
       <p className="mt-3 text-sm text-[#6b7280]">
         Join the community.
       </p>
+
+      {error && (
+        <p className="mt-3 text-sm text-red-500">{error}</p>
+      )}
 
       <form className="mt-6 space-y-2">
         <div>
@@ -115,9 +160,10 @@ function Signup({ setUser }) {
         <button
           type="button"
           onClick={handleSignup}
+          disabled={loading}
           className="h-10 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
         >
-          Sign Up
+          {loading ? "Signing up..." : "Sign Up"}
         </button>
       </form>
 
@@ -130,5 +176,6 @@ function Signup({ setUser }) {
     </AuthLayout>
   );
 }
+
 
 export default Signup;

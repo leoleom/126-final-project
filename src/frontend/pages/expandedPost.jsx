@@ -1,160 +1,323 @@
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
+import Navbar from "../components/navbar";
+import TopBar from "../components/topBar";
 
-function ExpandedPost() {
+function ExpandedPost({ user }) {
   const { id } = useParams();
 
-  const posts = [
-    {
-      id: 1,
-      username: "@leolem",
-      time: "2h ago",
-      title: "Lf: kasama habang buhay",
-      body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin auctor ultricies metus, a rhoncus felis convallis commodo. Proin at mauris et odio scelerisque ultrices in turpis.",
-      tags: ["mental health", "academics", "students", "+2"],
-      likes: 51,
-      views: 120,
-    },
-    {
-      id: 2,
-      username: "@junel",
-      time: "8h ago",
-      title: "Iniwan mo nako sa ere :(",
-      body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin auctor ultricies metus, a rhoncus felis convallis commodo. Proin at mauris et odio scelerisque ultrices in turpis.",
-      tags: ["rants", "relationships", "students"],
-      likes: 28,
-      views: 89,
-    },
-  ];
+  const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [authorPostCount, setAuthorPostCount] = useState(0);
+  const [newComment, setNewComment] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const post = posts.find((item) => item.id === Number(id));
+  useEffect(() => {
+    fetchPost();
+    fetchComments();
+  }, [id]);
 
-  if (!post) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f8f7] text-[#1f2937]">
-        <div className="text-center">
-          <h1 className="text-2xl font-extrabold">Post not found.</h1>
-          <Link
-            to="/feed"
-            className="mt-4 inline-block text-sm font-bold text-[#3f6f4f]"
-          >
-            Back to feed
-          </Link>
-        </div>
-      </div>
-    );
+  async function fetchPost() {
+    setLoading(true);
+
+    const { data, error: fetchError } = await supabase
+      .from("posts")
+      .select(`
+        id,
+        title,
+        content,
+        is_anonymous,
+        created_at,
+        author_id,
+        author:users (id, username, display_name, avatar_url, bio, created_at),
+        post_tags (tags (name)),
+        votes (id, vote_type)
+      `)
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !data) {
+      setError("Post not found.");
+      setLoading(false);
+      return;
+    }
+
+    // fetch author post count
+    const { count } = await supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .eq("author_id", data.author_id)
+      .eq("status", "live");
+
+    setAuthorPostCount(count ?? 0);
+    setPost(data);
+    setLoading(false);
   }
 
+  async function fetchComments() {
+    const { data, error: fetchError } = await supabase
+      .from("comments")
+      .select(`
+        id,
+        content,
+        created_at,
+        author:users (username, display_name, avatar_url)
+      `)
+      .eq("post_id", id)
+      .order("created_at", { ascending: false });
+
+    if (!fetchError) setComments(data ?? []);
+  }
+
+  async function handleAddComment() {
+    if (!newComment.trim()) return;
+    setCommentLoading(true);
+
+    const { error: insertError } = await supabase
+      .from("comments")
+      .insert({
+        post_id: id,
+        author_id: user.id,
+        content: newComment.trim(),
+      });
+
+    if (insertError) {
+      console.error("Error adding comment:", insertError);
+      setCommentLoading(false);
+      return;
+    }
+
+    setNewComment("");
+    setCommentLoading(false);
+    fetchComments(); // refresh comments
+  }
+
+  function formatTimeAgo(createdAt) {
+    const now = new Date();
+    const postDate = new Date(createdAt);
+    const seconds = Math.floor((now - postDate) / 1000);
+    if (seconds < 60) return "Just now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  function formatJoinDate(createdAt) {
+    return new Date(createdAt).toLocaleDateString("en-US", {
+      month: "long", year: "numeric",
+    });
+  }
+
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-[#6b7280]">
+      Loading post...
+    </div>
+  );
+
+  if (error || !post) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f7f8f7] text-[#1f2937]">
+      <div className="text-center">
+        <h1 className="text-2xl font-extrabold">Post not found.</h1>
+        <Link to="/feed" className="mt-4 inline-block text-sm font-bold text-[#3f6f4f]">
+          Back to feed
+        </Link>
+      </div>
+    </div>
+  );
+
+  const tags = post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [];
+  const likes = post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0;
+  const authorName = post.is_anonymous
+    ? "Anonymous"
+    : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`;
+
   return (
-    <div className="min-h-screen bg-[#f7f8f7] px-10 py-10 text-[#1f2937]">
-      <main className="mx-auto grid max-w-[1100px] grid-cols-[1fr_260px] gap-10">
-        <section>
-          <Link to="/feed" className="text-sm font-extrabold text-[#374151]">
-            ← Back to all posts
-          </Link>
+    <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
+      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
+        <Navbar user={user} />
 
-          <article className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
+        <div className="grid grid-rows-[112px_1fr]">
+          <TopBar user={user} searchQuery="" setSearchQuery={() => {}} />
 
-              <div>
-                <p className="text-sm font-extrabold">{post.username}</p>
-                <p className="text-xs font-semibold text-[#9ca3af]">
-                  {post.time}
-                </p>
-              </div>
-            </div>
+          <div className="px-10 py-10">
+            <main className="mx-auto grid max-w-[1100px] grid-cols-[1fr_260px] gap-10">
+              <section>
+                <Link to="/feed" className="text-sm font-extrabold text-[#374151]">
+                  ← Back to all posts
+                </Link>
 
-            <h1 className="mt-8 text-2xl font-extrabold">{post.title}</h1>
+                {/* Post */}
+                <article className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
+                  <div className="flex items-center gap-4">
+                    {post.author?.avatar_url && !post.is_anonymous ? (
+                      <img
+                        src={post.author.avatar_url}
+                        alt={authorName}
+                        className="h-14 w-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
+                    )}
 
-            <div className="mt-6 flex flex-wrap gap-4">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-lg bg-[#e6f0ea] px-6 py-2 text-xs font-bold text-[#3f6f4f]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+                    <div>
+                      <p className="text-sm font-extrabold">{authorName}</p>
+                      <p className="text-xs font-semibold text-[#9ca3af]">
+                        {formatTimeAgo(post.created_at)}
+                      </p>
+                    </div>
+                  </div>
 
-            <p className="mt-6 text-sm leading-6 text-[#374151]">
-              {post.body}
-            </p>
+                  <h1 className="mt-8 text-2xl font-extrabold">{post.title}</h1>
 
-            <div className="mt-6 flex gap-6 text-sm font-bold">
-              <span>{post.likes} Likes</span>
-              <span>{post.views} Views</span>
-            </div>
-          </article>
+                  <div className="mt-6 flex flex-wrap gap-4">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-lg bg-[#e6f0ea] px-6 py-2 text-xs font-bold text-[#3f6f4f]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
 
-          <section className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold">Comments (14)</h2>
+                  {/* Render Trix HTML content */}
+                  <div
+                    className="mt-6 text-sm leading-6 text-[#374151] prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
+                  />
 
-              <button className="rounded-lg border border-[#e5e7eb] px-5 py-3 text-sm font-bold">
-                Most recent ˅
-              </button>
-            </div>
+                  <div className="mt-6 flex gap-6 text-sm font-bold text-[#9ca3af]">
+                    <span>{likes} Likes</span>
+                    <span>{comments.length} Comments</span>
+                  </div>
+                </article>
 
-            <div className="mt-8 space-y-8">
-              <Comment username="@marites1" />
-              <Comment username="@iskolarngbayan" />
-            </div>
-          </section>
-        </section>
+                {/* Comments */}
+                <section className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
+                  <h2 className="text-lg font-extrabold">
+                    Comments ({comments.length})
+                  </h2>
 
-        <aside className="space-y-8 pt-12">
-          <section className="rounded-lg bg-[#e6f0ea] p-7">
-            <h3 className="text-lg font-extrabold">About the author</h3>
+                  {/* Add comment */}
+                  <div className="mt-6 flex gap-4">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-[#d1d5db]" />
+                    <div className="flex flex-1 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Write a comment..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+                        className="h-9 flex-1 rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddComment}
+                        disabled={commentLoading || !newComment.trim()}
+                        className="h-9 rounded-lg bg-[#3f6f4f] px-4 text-sm font-extrabold text-white disabled:opacity-50"
+                      >
+                        Post
+                      </button>
+                    </div>
+                  </div>
 
-            <div className="mt-8 flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
+                  <div className="mt-8 space-y-8">
+                    {comments.length === 0 && (
+                      <p className="text-sm text-[#9ca3af]">
+                        No comments yet. Be the first!
+                      </p>
+                    )}
 
-              <div>
-                <p className="text-sm font-extrabold">{post.username}</p>
-                <p className="text-xs">Joined March 2026</p>
-              </div>
-            </div>
+                    {comments.map((comment) => (
+                      <Comment
+                        key={comment.id}
+                        username={`@${comment.author?.username ?? comment.author?.display_name ?? "unknown"}`}
+                        content={comment.content}
+                        time={formatTimeAgo(comment.created_at)}
+                        avatarUrl={comment.author?.avatar_url}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </section>
 
-            <p className="mt-8 text-center text-sm font-bold">27 Posts</p>
-          </section>
+              {/* Sidebar */}
+              <aside className="space-y-8 pt-12">
+                {!post.is_anonymous && post.author && (
+                  <section className="rounded-lg bg-[#e6f0ea] p-7">
+                    <h3 className="text-lg font-extrabold">About the author</h3>
 
-          <section className="rounded-lg bg-[#e6f0ea] p-7">
-            <h3 className="text-lg font-extrabold">Related Posts</h3>
+                    <div className="mt-8 flex items-center gap-4">
+                      {post.author.avatar_url ? (
+                        <img
+                          src={post.author.avatar_url}
+                          alt={authorName}
+                          className="h-14 w-14 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
+                      )}
 
-            <ul className="mt-8 space-y-10 text-sm">
-              <li>How to deal with failures</li>
-              <li>An open letter to my prof</li>
-              <li>Group works: blessing or curse?</li>
-            </ul>
+                      <div>
+                        <p className="text-sm font-extrabold">{authorName}</p>
+                        <p className="text-xs text-[#6b7280]">
+                          Joined {formatJoinDate(post.author.created_at)}
+                        </p>
+                      </div>
+                    </div>
 
-            <Link
-              to="/feed"
-              className="mt-8 block text-sm font-extrabold text-[#3f6f4f]"
-            >
-              View all
-            </Link>
-          </section>
-        </aside>
-      </main>
+                    {post.author.bio && (
+                      <p className="mt-4 text-sm text-[#374151]">{post.author.bio}</p>
+                    )}
+
+                    <p className="mt-8 text-center text-sm font-bold">
+                      {authorPostCount} Posts
+                    </p>
+                  </section>
+                )}
+
+                {post.is_anonymous && (
+                  <section className="rounded-lg bg-[#e6f0ea] p-7">
+                    <h3 className="text-lg font-extrabold">About the author</h3>
+                    <p className="mt-4 text-sm text-[#6b7280]">
+                      This post was made anonymously.
+                    </p>
+                  </section>
+                )}
+
+                <section className="rounded-lg bg-[#e6f0ea] p-7">
+                  <h3 className="text-lg font-extrabold">Related Posts</h3>
+                  <p className="mt-4 text-sm text-[#6b7280]">Coming soon.</p>
+                </section>
+              </aside>
+            </main>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Comment({ username }) {
+function Comment({ username, content, time, avatarUrl }) {
   return (
     <article className="border-l-4 border-[#1f2937] pl-5">
-      <p className="text-sm font-bold">{username}</p>
-
-      <p className="mt-2 text-sm leading-6 text-[#374151]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin auctor
-        ultricies metus, a rhoncus felis convallis commodo.
-      </p>
-
-      <div className="mt-3 flex gap-5 text-xs font-bold">
-        <span>51 Likes</span>
-        <span>xx Views</span>
+      <div className="flex items-center gap-3">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={username} className="h-7 w-7 rounded-full object-cover" />
+        ) : (
+          <div className="h-7 w-7 rounded-full bg-[#d1d5db]" />
+        )}
+        <p className="text-sm font-bold">{username}</p>
+        <span className="text-xs text-[#9ca3af]">{time}</span>
       </div>
+
+      <p className="mt-2 text-sm leading-6 text-[#374151]">{content}</p>
     </article>
   );
 }

@@ -24,8 +24,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/cli": "^4.2.4",
+    "dompurify": "^3.4.2",
     "express": "^5.2.1",
-    "react-router-dom": "^7.15.0"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.0",
+    "trix": "^2.1.18"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.4",

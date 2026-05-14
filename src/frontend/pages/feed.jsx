@@ -1,42 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
+import { supabase } from "../services/supabaseClient";
 
 function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      username: "@leolem",
-      createdAt: "2026-05-07T14:30:00",
-      title: "Lf: kasama habang buhay",
-      body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin auctor ultricies metus, a rhoncus felis convallis commodo.",
-      tags: ["mental health", "academics", "students", "+2"],
-      likes: 51,
-      views: 120,
-    },
-    {
-      id: 2,
-      username: "@junel",
-      createdAt: "2026-05-07T08:00:00",
-      title: "Iniwan mo nako sa ere :(",
-      body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin auctor ultricies metus, a rhoncus felis convallis commodo.",
-      tags: ["rants", "relationships", "students"],
-      likes: 28,
-      views: 89,
-    },
-  ]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const trendingTopics = [
-    "Mental Health",
-    "Academic Pressure",
-    "Cravings",
-    "Not Pregnant",
-    "Freedom of Speech",
+    "Mental Health", "Academic Pressure", "Cravings",
+    "Not Pregnant", "Freedom of Speech",
   ];
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  async function fetchPosts() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select(`
+        id,
+        title,
+        content,
+        is_anonymous,
+        status,
+        created_at,
+        author_id,
+        author:users (display_name, username, avatar_url),
+        post_tags (
+          tags (name)
+        ),
+        votes (id, vote_type)
+      `)
+      .eq("status", "live")
+      .order("created_at", { ascending: false });
+    
+    console.log("raw post data:", JSON.stringify(data, null, 2));
+    console.log("error:", error);
+    
+    if (error) {
+      console.error("Error fetching posts:", error);
+      setLoading(false);
+      return;
+    }
+
+    // Shape data to match what PostCard expects
+    const shaped = data.map((post) => ({
+      id: post.id,
+      username: post.is_anonymous
+        ? "Anonymous"
+        : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
+      createdAt: post.created_at,
+      title: post.title,
+      body: post.content,
+      tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
+      likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+      views: 0, // no views column in ERD yet
+    }));
+
+    setPosts(shaped);
+    setLoading(false);
+  }
 
   function formatTimeAgo(createdAt) {
     const now = new Date();
@@ -44,45 +74,18 @@ function Feed({ user }) {
     const seconds = Math.floor((now - postDate) / 1000);
 
     if (seconds < 60) return "Just now";
-
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
-
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
-
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
   }
 
-  function addPost(newPost) {
-    setPosts((prevPosts) => [newPost, ...prevPosts]);
-  }
-
-  function updatePost(updatedPost) {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === updatedPost.id ? updatedPost : post
-      )
-    );
-  }
-
   function handleLike(postId) {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? { ...post, likes: post.likes + 1 }
-          : post
-      )
-    );
-  }
-
-  function handleView(postId) {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? { ...post, views: post.views + 1 }
-          : post
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
       )
     );
   }
@@ -90,23 +93,16 @@ function Feed({ user }) {
   const filteredPosts = posts
     .filter((post) => {
       const query = searchQuery.toLowerCase();
-
       return (
-        post.title.toLowerCase().includes(query) ||
-        post.body.toLowerCase().includes(query) ||
-        post.username.toLowerCase().includes(query) ||
+        post.title?.toLowerCase().includes(query) ||
+        post.body?.toLowerCase().includes(query) ||
+        post.username?.toLowerCase().includes(query) ||
         post.tags.some((tag) => tag.toLowerCase().includes(query))
       );
     })
     .sort((a, b) => {
-      if (activeTab === "Popular") {
-        return b.likes - a.likes;
-      }
-
-      if (activeTab === "Trending") {
-        return b.views - a.views;
-      }
-
+      if (activeTab === "Popular") return b.likes - a.likes;
+      if (activeTab === "Trending") return b.views - a.views;
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
@@ -146,11 +142,17 @@ function Feed({ user }) {
                 </div>
 
                 <div className="mt-3 text-sm font-semibold text-[#6b7280]">
-                  {searchQuery && ` · Search: ${searchQuery}`}
+                  {searchQuery && `· Search: ${searchQuery}`}
                 </div>
 
                 <div className="mt-8 space-y-6">
-                  {filteredPosts.length === 0 && (
+                  {loading && (
+                    <p className="text-sm font-semibold text-[#6b7280]">
+                      Loading posts...
+                    </p>
+                  )}
+
+                  {!loading && filteredPosts.length === 0 && (
                     <p className="text-sm font-semibold text-[#6b7280]">
                       No posts found.
                     </p>
@@ -168,7 +170,7 @@ function Feed({ user }) {
                       likes={post.likes}
                       views={post.views}
                       onLike={() => handleLike(post.id)}
-                      onView={() => handleView(post.id)}
+                      onView={() => {}}
                     />
                   ))}
                 </div>
@@ -189,7 +191,6 @@ function Feed({ user }) {
                     </li>
                   ))}
                 </ul>
-
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
@@ -204,14 +205,12 @@ function Feed({ user }) {
                 <p className="text-l font-bold leading-6 text-[#1f2937]">
                   The truth will set you free, but first will make you uncomfortable
                 </p>
-
                 <p className="mt-4 text-sm text-[#6b7280]">— Unknown</p>
               </RightCard>
 
               <RightCard title="Community Reminder">
                 <p className="text-sm leading-6 text-[#374151]">
-                  Let’s keep discussions respectful. Different opinions, one
-                  community.
+                  Let's keep discussions respectful. Different opinions, one community.
                 </p>
               </RightCard>
             </aside>
@@ -226,11 +225,8 @@ function RightCard({ title, children }) {
   return (
     <section className="mb-8 rounded-lg bg-[#e6f0ea] p-7">
       {title && (
-        <h3 className="mb-6 text-lg font-extrabold text-[#1f2937]">
-          {title}
-        </h3>
+        <h3 className="mb-6 text-lg font-extrabold text-[#1f2937]">{title}</h3>
       )}
-
       {children}
     </section>
   );
