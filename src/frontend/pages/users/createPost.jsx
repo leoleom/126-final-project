@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Navbar from "../../components/navbar";
-
 import { getTags } from "../../services/tagService";
 
 function CreatePost({ user }) {

@@ -81,10 +81,10 @@ function PostCard({
           onClick={onLike}
           className="font-bold hover:text-[#3f6f4f]"
         >
-          {likes} likes
+          ♥ {likes} likes
         </button>
 
-        <span>{views} views</span>
+        <span> 👁 {views} views</span>
       </div>
     </article>
   );

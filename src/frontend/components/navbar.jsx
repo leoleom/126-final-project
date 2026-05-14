@@ -4,11 +4,11 @@ function Navbar({user}) {
   const location = useLocation();
 
   const navItems = [
-    { label: "Home", path: "/feed" },
-    { label: "Profile", path: "/profile" },
+    { label: "🏠︎ Home", path: "/feed" },
+    { label: " Profile", path: "/profile" },
     { label: "Bookmarks", path: "/bookmarks" },
-    { label: "Drafts", path: "/drafts" },
-    { label: "Guidelines", path: "/guidelines" },
+    { label: "✉︎ Drafts", path: "/drafts" },
+    { label: " Guidelines", path: "/guidelines" },
     { label: "Settings", path: "/settings" },
 
     ...(user?.role === "admin"
@@ -49,7 +49,7 @@ function Navbar({user}) {
         })}
       </nav>
 
-      <Link to="/" className="mt-28 block px-7 text-sm font-extrabold">
+      <Link to="/" className="mt-28 block px-7 text-sm font-extrabold text-red-500">
         Logout
       </Link>
     </aside>
