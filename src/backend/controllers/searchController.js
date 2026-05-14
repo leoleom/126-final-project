@@ -1,38 +1,33 @@
 const supabase = require('../config/supabaseClient');
 
-// Handles search requests from the feed's search bar.
-// Expects a query parameter: ?q=keyword
 exports.searchPosts = async (req, res) => {
   const searchQuery = req.query.q;
 
+  const selectQuery = `
+    id, title, content, is_anonymous, status, created_at, author_id,
+    author:users (display_name, username, avatar_url),
+    post_tags (tags (name)),
+    votes (id, vote_type)
+  `;
+
   try {
-    // Fallback: If the user clears the search bar or sends an empty request, 
-    // we return the default feed (all posts, newest first).
-    if (!searchQuery || searchQuery.trim() === '') {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return res.status(200).json(data);
-    }
-
-    // Keyword search logic.
-    // Use of  .ilike() instead of .like() here. 
-    // ILIKE is case-insensitive, so searching "cmsc" will successfully match "CMSC".
-    // The % symbols act as wildcards to find the word anywhere inside the string.
-    const { data, error } = await supabase
+    let query = supabase
       .from('posts')
-      .select('*')
-      .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+      .select(selectQuery)
+      .eq('status', 'live')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    // If there is a search term, add the backend filter
+    if (searchQuery && searchQuery.trim() !== '') {
+      query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+    }
 
-    res.status(200).json(data);
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return res.status(200).json(data);
+
   } catch (error) {
-    // Log the raw error for backend debugging, but return a clean 500 to the frontend
     console.error('Search API Error:', error.message);
     res.status(500).json({ error: 'Internal server error while searching posts.' });
   }
