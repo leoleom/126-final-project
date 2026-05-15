@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar";
 import TopBar from "../../components/topBar";
 import PostCard from "../../components/postCard";
-import { supabase } from "../../services/supabaseClient";
 
 function Drafts({ user }) {
   const [drafts, setDrafts] = useState([]);
@@ -16,26 +15,15 @@ function Drafts({ user }) {
 
   async function fetchDrafts() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        created_at,
-        post_tags (tags (name))
-      `)
-      .eq("author_id", user.id)
-      .eq("status", "draft")
-      .order("created_at", { ascending: false });
 
-    if (error) {
+    try {
+      const response = await fetch( `http://localhost:5000/api/users/${user.id}/drafts`);
+      const data = await response.json();
+      // console.log("draft backend data:", data);
+      setDrafts(data);
+    } catch (error) {
       console.error("Error fetching drafts:", error);
-      setLoading(false);
-      return;
     }
-
-    setDrafts(data);
     setLoading(false);
   }
 
@@ -83,6 +71,7 @@ function Drafts({ user }) {
                   key={draft.id}
                   id={draft.id}
                   username={`@${user.username ?? user.display_name}`}
+                  profilePicture={user.avatar_url}
                   time={formatTimeAgo(draft.created_at)}
                   title={draft.title || "Untitled draft"}
                   body={draft.content ?? ""}
@@ -91,7 +80,7 @@ function Drafts({ user }) {
                   views={0}
                   isDraft={true}
                   onLike={() => {}}
-                  onView={() => navigate(`/drafts/${draft.id}/edit`)}
+                  onView={() => navigate(`/posts/${draft.id}/edit`)}
                 />
               ))}
             </div>

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
-import { supabase } from "../services/supabaseClient";
 
 function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
@@ -21,50 +20,29 @@ function Feed({ user }) {
 
   async function fetchPosts() {
     setLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/posts");
+      const data = await response.json();
+      // console.log("backend data:", data);
 
-    const { data, error } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        is_anonymous,
-        status,
-        created_at,
-        author_id,
-        author:users (display_name, username, avatar_url),
-        post_tags (
-          tags (name)
-        ),
-        votes (id, vote_type)
-      `)
-      .eq("status", "live")
-      .order("created_at", { ascending: false });
-    
-    console.log("raw post data:", JSON.stringify(data, null, 2));
-    console.log("error:", error);
-    
-    if (error) {
-      console.error("Error fetching posts:", error);
-      setLoading(false);
-      return;
-    }
+      // Shape data to match what PostCard expects
+      const shaped = data.map((post) => ({
+          id: post.id,
+          authorId: post.author_id,
+          username: post.is_anonymous
+            ? "Anonymous"
+            : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
+          profilePicture: post.author?.avatar_url,
+          createdAt: post.created_at,
+          title: post.title,
+          body: post.content,
+          tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
+          likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+          views: 0, // no views column in ERD yet
+        }));
+      setPosts(shaped);
+    } catch (error) { console.error("Error fetching posts:", error); }
 
-    // Shape data to match what PostCard expects
-    const shaped = data.map((post) => ({
-      id: post.id,
-      username: post.is_anonymous
-        ? "Anonymous"
-        : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
-      createdAt: post.created_at,
-      title: post.title,
-      body: post.content,
-      tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
-      likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-      views: 0, // no views column in ERD yet
-    }));
-
-    setPosts(shaped);
     setLoading(false);
   }
 
@@ -163,6 +141,9 @@ function Feed({ user }) {
                       key={post.id}
                       id={post.id}
                       username={post.username}
+                      authorId={post.authorId}
+                      user={user}
+                      profilePicture={post.profilePicture}
                       time={formatTimeAgo(post.createdAt)}
                       title={post.title}
                       body={post.body}

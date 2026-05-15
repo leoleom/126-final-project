@@ -1,41 +1,89 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import SettingsNavbar from "../components/SettingsNavbar";
 
 function Settings({ user, setUser }) {
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState(
-    user?.displayName || user?.username || ""
+    user?.display_name || user?.username || ""
   );
   const [email, setEmail] = useState(user?.email || "leolem@up.edu.ph");
   const [bio, setBio] = useState(
     user?.bio || "Ako ay may lobo. Lumipad sa langit."
   );
   const [profilePicture, setProfilePicture] = useState(
-    user?.profilePicture || ""
+    user?.avatar_url || ""
   );
 
-  function handleProfilePictureChange(e) {
+  async function handleProfilePictureChange(e) {
     const file = e.target.files[0];
-
     if (!file) return;
 
-    const imageUrl = URL.createObjectURL(file);
-    setProfilePicture(imageUrl);
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePicture(previewUrl);
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = fileName;
+
+    const { error } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, {
+        upsert: true,
+      });
+
+    if (error) {
+      console.error(error);
+      alert("Upload failed.");
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
+
+    setProfilePicture(data.publicUrl);
   }
 
-  function handleSave() {
-    setUser({
-      ...user,
-      displayName,
-      username: displayName,
-      email,
-      bio,
-      profilePicture,
-    });
+  async function handleSave() {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            display_name: displayName,
+            bio,
+            avatar_url: profilePicture,
+          }),
+        }
+      );
 
-    alert("Settings saved.");
+      const data = await response.json();
+      if (!response.ok) {
+        alert( data.error ?? "Failed to save profile");
+        return;
+      }
+
+      setUser({
+        ...user,
+        display_name: data.display_name,
+        username: data.username,
+        bio: data.bio,
+        avatar_url: data.avatar_url,
+      });
+
+      alert("Settings saved.");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save profile");
+    }
   }
 
   function handleDeleteAccount() {
