@@ -24,15 +24,15 @@ function AdminDashboard() {
   }, []);
 
   const activeUsers = users.filter(
-    (user) => user.status === "Active"
+    (user) => user.status === "active"
   ).length;
 
   const pendingReports = reportedPosts.filter(
-    (post) => post.status === "Pending"
+    (post) => post.status === "pending"
   ).length;
 
   const pendingAnonymousPosts = anonymousPosts.filter(
-    (post) => post.status === "Pending"
+    (post) => post.status === "pending"
   ).length;
 
   const stats = [
@@ -81,9 +81,9 @@ function AdminDashboard() {
 
           <DataTable
             title="Recent Reported Posts"
-            columns={["Post", "Reported by", "Reason", "Date", "Status"]}
+            columns={["Post", "Reported by", "Date", "Status"]}
             rows={reportedPosts}
-            fields={["post", "reportedBy", "reason", "date", "status"]}
+            fields={["post", "reportedBy", "date", "status"]}
             linkText="View all reported posts"
             linkPath="/admin/reported-posts"
           />
@@ -167,7 +167,7 @@ function StatusBadge({ status }) {
       className={`rounded-full px-4 py-1 text-xs font-extrabold ${
         status === "Pending"
           ? "bg-[#fde68a] text-[#92400e]"
-          : status === "Reviewed" || status === "Approved"
+          : status === "Reviewed" || status === "approved"
           ? "bg-[#bbf7d0] text-[#166534]"
           : "bg-[#fecaca] text-[#991b1b]"
       }`}
