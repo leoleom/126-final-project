@@ -5,8 +5,9 @@ function Navbar({ user }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Sidebar navigation items (admin dashboard shown only for admins)
   const navItems = [
-    { label: "Home", path: "/feed" },
+    { label: "🏠︎ Home", path: "/feed" },
     { label: "Profile", path: "/profile" },
     { label: "Bookmarks", path: "/bookmarks" },
     { label: "Drafts", path: "/drafts" },
@@ -18,6 +19,7 @@ function Navbar({ user }) {
       : []),
   ];
 
+  // Logs user out and redirects to landing page
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate("/");
@@ -29,6 +31,7 @@ function Navbar({ user }) {
         Better Better UPV
       </h1>
 
+      {/* Quick access to create post */}
       <Link
         to="/create-post"
         className="mt-16 flex h-14 w-full items-center justify-center rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
@@ -36,6 +39,7 @@ function Navbar({ user }) {
         + Create Post
       </Link>
 
+      {/* Sidebar navigation */}
       <nav className="mt-8 space-y-3 text-sm font-extrabold">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -56,6 +60,7 @@ function Navbar({ user }) {
         })}
       </nav>
 
+      {/* Logout button */}
       <button
         onClick={handleLogout}
         className="mt-28 block px-7 text-sm font-extrabold text-left text-[#111827] hover:text-red-500"

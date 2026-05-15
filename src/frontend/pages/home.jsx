@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import treesImage from "../public/ll-trees.png";
 
 function Home() {
   return (
@@ -70,7 +71,7 @@ function Home() {
 
         <section className="min-h-screen">
           <img
-            src="/ll-trees.png"
+            src={treesImage}
             alt="Campus trees"
             className="h-[100%] w-full object-cover"
           />

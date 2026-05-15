@@ -398,6 +398,7 @@ function CreatePost({ user, existingPost = null }) {
         </section>
 
       </main>
+
     </div>
   );
 }

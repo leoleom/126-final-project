@@ -37,12 +37,13 @@ function AdminNavbar() {
         })}
       </nav>
 
-      <Link
-        to="/"
-        className="mt-40 block px-6 text-sm font-extrabold"
+      {/* Logout button */}
+      <button
+        onClick={handleLogout}
+        className="mt-28 block px-7 text-sm font-extrabold text-left text-[#111827] hover:text-red-500"
       >
         Logout
-      </Link>
+      </button>
     </aside>
   );
 }

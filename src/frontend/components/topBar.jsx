@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 function TopBar({ user, searchQuery, setSearchQuery }) {
   return (
     <header className="flex h-28 items-center justify-between border-b border-[#e5e7eb] px-9">
+      
+      {/* Search bar */}
       <div className="flex h-12 w-[480px] items-center rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 text-sm text-[#6b7280]">
         <span>🔍</span>
 
@@ -15,6 +17,7 @@ function TopBar({ user, searchQuery, setSearchQuery }) {
         />
       </div>
 
+      {/* Profile shortcut */}
       <Link to="/profile" className="flex items-center gap-4">
         {user?.avatar_url ? (
           <img
@@ -25,7 +28,7 @@ function TopBar({ user, searchQuery, setSearchQuery }) {
         ) : (
           <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
         )}
-        <span className="text-sm font-extrabold">@{user?.username}</span>
+        <span className="text-sm font-extrabold">{user ? `@${user.username}` : "Profile"}</span>
       </Link>
     </header>
   );

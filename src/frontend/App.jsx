@@ -65,6 +65,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/guidelines" element={<Guidelines />} />
+      
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route path="/login"
