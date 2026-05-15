@@ -51,7 +51,7 @@ function Login({ setUser }) {
     // fetch user data
     const { data: profile, error: profileError } = await supabase
       .from("users")
-      .select("id, email, username, avatar_url, role")
+      .select("id, email, username, display_name, avatar_url, role, bio")
       .eq("id", data.user.id)
       .single();
 
