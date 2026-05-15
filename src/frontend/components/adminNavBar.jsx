@@ -1,8 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
 function AdminNavbar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/");
+  }
+  
   const adminItems = [
     { label: "Overview", path: "/admin" },
     { label: "Users", path: "/admin/users" },
@@ -10,6 +17,7 @@ function AdminNavbar() {
     { label: "Reported Posts", path: "/admin/reported-posts" },
     { label: "Settings", path: "/admin/settings" },
   ];
+
 
   return (
     <aside className="border-r border-[#e5e7eb] px-8 py-10">

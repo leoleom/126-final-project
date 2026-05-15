@@ -126,7 +126,7 @@ function PostCard({
         </button>
 
         {/* View counter */}
-        <span>👁 {views} views</span>
+        <span>{views} views</span>
       </div>
     </article>
   );
