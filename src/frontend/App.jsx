@@ -45,7 +45,7 @@ function App() {
           if (session) {
             const { data: profile } = await supabase
               .from("users")
-              .select("id, email, username, display_name, avatar_url, role")
+              .select("id, email, username, display_name, avatar_url, bio, role")
               .eq("id", session.user.id)
               .single();
 

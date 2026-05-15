@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SettingsNavbar from "../components/SettingsNavbar";
+import { supabase } from "../services/supabaseClient";
 
 function Settings({ user, setUser }) {
   const navigate = useNavigate();
+  const [profileFile, setProfileFile] = useState(null);
 
   const [displayName, setDisplayName] = useState(
-    user?.displayName || user?.username || ""
+    user?.display_name || user?.displayName || user?.username || ""
   );
-  const [email, setEmail] = useState(user?.email || "leolem@up.edu.ph");
-  const [bio, setBio] = useState(
-    user?.bio || "Ako ay may lobo. Lumipad sa langit."
-  );
+  const [email, setEmail] = useState(user?.email || "");
+  const [bio, setBio] = useState(user?.bio || "");
   const [profilePicture, setProfilePicture] = useState(
-    user?.profilePicture || ""
+    user?.avatar_url || user?.profilePicture || ""
   );
 
   function handleProfilePictureChange(e) {
@@ -21,18 +21,61 @@ function Settings({ user, setUser }) {
 
     if (!file) return;
 
-    const imageUrl = URL.createObjectURL(file);
-    setProfilePicture(imageUrl);
+    setProfileFile(file);
+    setProfilePicture(URL.createObjectURL(file));
   }
 
-  function handleSave() {
+  async function handleSave() {
+    let avatarUrl = user?.avatar_url || user?.profilePicture || "";
+
+    if (profileFile) {
+      const fileExt = profileFile.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, profileFile, {
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        alert("Failed to upload profile picture.");
+        return;
+      }
+
+      const { data } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      avatarUrl = data.publicUrl;
+    }
+
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        display_name: displayName,
+        email,
+        bio,
+        avatar_url: avatarUrl,
+      })
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Update error:", updateError);
+      alert("Failed to save settings.");
+      return;
+    }
+
     setUser({
       ...user,
+      display_name: displayName,
       displayName,
-      username: displayName,
+      username: user.username,
       email,
       bio,
-      profilePicture,
+      avatar_url: avatarUrl,
+      profilePicture: avatarUrl,
     });
 
     alert("Settings saved.");
