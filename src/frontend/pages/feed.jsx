@@ -32,7 +32,7 @@ function Feed({ user }) {
           username: post.is_anonymous
             ? "Anonymous"
             : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
-          profilePicture: post.author?.avatar_url,
+          profilePicture: post.is_anonymous? null : post.author?.avatar_url,
           createdAt: post.created_at,
           title: post.title,
           body: post.content,
