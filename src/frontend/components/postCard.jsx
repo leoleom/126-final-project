@@ -4,6 +4,7 @@ import { useState } from "react";
 function PostCard({
   id,
   username,
+  avatarUrl,
   time,
   title,
   body,
@@ -26,7 +27,15 @@ function PostCard({
         <div className="flex items-center gap-4">
           
           {/* Placeholder profile picture */}
-          <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="h-11 w-11 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+          )}
 
           {/* Username and timestamp */}
           <div>

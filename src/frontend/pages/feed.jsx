@@ -56,6 +56,7 @@ function Feed({ user }) {
       username: post.is_anonymous
         ? "Anonymous"
         : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
+      avatarUrl: post.is_anonymous ? null : post.author?.avatar_url,
       createdAt: post.created_at,
       title: post.title,
       body: post.content,
@@ -210,6 +211,7 @@ function Feed({ user }) {
                       key={post.id}
                       id={post.id}
                       username={post.username}
+                      avatarUrl={post.avatarUrl}
                       time={formatTimeAgo(post.createdAt)}
                       title={post.title}
                       body={post.body}
