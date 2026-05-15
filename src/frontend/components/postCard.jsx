@@ -12,6 +12,7 @@ function PostCard({
   views,
   onLike,
   onView,
+  onTagClick,
   isDraft = false,
 }) {
   // Controls the visibility of the Edit/Report dropdown menu
@@ -93,12 +94,14 @@ function PostCard({
       {/* Post tags */}
       <div className="mt-7 flex flex-wrap gap-4">
         {tags.map((tag) => (
-          <span
+          <button
             key={tag}
-            className="rounded-full bg-[#e6f0ea] px-5 py-1.5 text-xs font-extrabold text-[#3f6f4f]"
+            type="button"
+            onClick={() => onTagClick?.(tag)}
+            className="rounded-full bg-[#e6f0ea] px-5 py-1.5 text-xs font-extrabold text-[#3f6f4f] cursor-pointer hover:bg-[#d7e8dd]"
           >
             {tag}
-          </span>
+          </button>
         ))}
       </div>
 
@@ -115,7 +118,7 @@ function PostCard({
         </button>
 
         {/* View counter */}
-        <span>👁 {views} views</span>
+        <span>{views} views</span>
       </div>
     </article>
   );

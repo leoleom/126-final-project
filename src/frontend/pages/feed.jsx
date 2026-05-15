@@ -3,21 +3,25 @@ import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
 import { supabase } from "../services/supabaseClient";
+import { getTags } from "../services/tagService";
 
 function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
   const [searchQuery, setSearchQuery] = useState("");
   const [posts, setPosts] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const trendingTopics = [
-    "Mental Health", "Academic Pressure", "Cravings",
-    "Not Pregnant", "Freedom of Speech",
-  ];
 
   useEffect(() => {
     fetchPosts();
+    loadTags();
   }, []);
+
+  async function loadTags() {
+    const tags = await getTags();
+    setAvailableTags(tags);
+  }
 
   async function fetchPosts() {
     setLoading(true);
@@ -40,17 +44,13 @@ function Feed({ user }) {
       `)
       .eq("status", "live")
       .order("created_at", { ascending: false });
-    
-    console.log("raw post data:", JSON.stringify(data, null, 2));
-    console.log("error:", error);
-    
+
     if (error) {
       console.error("Error fetching posts:", error);
       setLoading(false);
       return;
     }
 
-    // Shape data to match what PostCard expects
     const shaped = data.map((post) => ({
       id: post.id,
       username: post.is_anonymous
@@ -61,7 +61,7 @@ function Feed({ user }) {
       body: post.content,
       tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
       likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-      views: 0, // no views column in ERD yet
+      views: 0,
     }));
 
     setPosts(shaped);
@@ -90,15 +90,33 @@ function Feed({ user }) {
     );
   }
 
+  function toggleTag(tag) {
+    setSelectedTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((selectedTag) => selectedTag !== tag)
+        : [...prev, tag]
+    );
+  }
+
+  function clearTagFilters() {
+    setSelectedTags([]);
+  }
+
   const filteredPosts = posts
     .filter((post) => {
       const query = searchQuery.toLowerCase();
-      return (
+
+      const matchesSearch =
         post.title?.toLowerCase().includes(query) ||
         post.body?.toLowerCase().includes(query) ||
         post.username?.toLowerCase().includes(query) ||
-        post.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
+        post.tags.some((tag) => tag.toLowerCase().includes(query));
+
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.every((tag) => post.tags.includes(tag));
+
+      return matchesSearch && matchesTags;
     })
     .sort((a, b) => {
       if (activeTab === "Popular") return b.likes - a.likes;
@@ -130,7 +148,7 @@ function Feed({ user }) {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`h-11 rounded-lg px-8 text-sm font-extrabold ${
+                      className={`h-8 rounded-lg px-8 text-sm font-extrabold cursor-pointer ${
                         activeTab === tab
                           ? "bg-[#e6f0ea] text-[#1f2937]"
                           : "border border-[#e5e7eb] bg-white text-[#111827]"
@@ -141,8 +159,37 @@ function Feed({ user }) {
                   ))}
                 </div>
 
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {availableTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full px-2 py-1 text-xs font-bold cursor-pointer ${
+                        selectedTags.includes(tag)
+                          ? "bg-[#3f6f4f] text-white"
+                          :  "border border-[#e5e7eb] bg-white text-[#3f6f4f]"
+                      }`}
+                    >
+                      # {tag}
+                    </button>
+                  ))}
+
+                  {selectedTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearTagFilters}
+                      className="rounded-full border border-red-200 px-2 py-1 text-xs font-bold text-red-500 cursor-pointer"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+
                 <div className="mt-3 text-sm font-semibold text-[#6b7280]">
                   {searchQuery && `· Search: ${searchQuery}`}
+                  {selectedTags.length > 0 &&
+                    ` · Tags: ${selectedTags.join(", ")}`}
                 </div>
 
                 <div className="mt-8 space-y-6">
@@ -171,48 +218,42 @@ function Feed({ user }) {
                       views={post.views}
                       onLike={() => handleLike(post.id)}
                       onView={() => {}}
+                      onTagClick={toggleTag}
                     />
                   ))}
                 </div>
               </section>
             </main>
 
-            <aside className="border-l border-[#e5e7eb] px-7 py-32">
-              <RightCard title="Trending Topics">
-                <ul className="space-y-4 text-sm font-semibold text-[#6b7280]">
-                  {trendingTopics.map((topic) => (
-                    <li key={topic}>
-                      <button
-                        onClick={() => setSearchQuery(topic)}
-                        className="text-left hover:text-[#3f6f4f]"
-                      >
-                        # {topic}
-                      </button>
-                    </li>
-                  ))}
+            <aside className="border-l border-[#e5e7eb] px-7 py-12">
+              <RightCard title="Community Snapshot">
+                <div className="space-y-2 text-sm font-medium text-[#374151]">
+                  <div className="flex justify-between">
+                    <span>Total Posts</span>
+                    <span>{posts.length}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Active Tags</span>
+                    <span>{availableTags.length}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Filtered Results</span>
+                    <span>{filteredPosts.length}</span>
+                  </div>
+                </div>
+              </RightCard>
+              
+              <RightCard title="Before You Post">
+                <ul className="space-y-2 text-sm leading-6 text-[#374151]">
+                  <li>• Respect privacy and anonymity</li>
+                  <li>• Avoid harassment or hate speech</li>
+                  <li>• Keep discussions constructive</li>
+                  <li>• Think before posting sensitive content</li>
                 </ul>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="mt-6 block text-sm font-extrabold text-[#3f6f4f]"
-                  >
-                    Clear search
-                  </button>
-                )}
               </RightCard>
 
-              <RightCard>
-                <p className="text-l font-bold leading-6 text-[#1f2937]">
-                  The truth will set you free, but first will make you uncomfortable
-                </p>
-                <p className="mt-4 text-sm text-[#6b7280]">— Unknown</p>
-              </RightCard>
-
-              <RightCard title="Community Reminder">
-                <p className="text-sm leading-6 text-[#374151]">
-                  Let's keep discussions respectful. Different opinions, one community.
-                </p>
-              </RightCard>
             </aside>
           </div>
         </div>
@@ -223,9 +264,11 @@ function Feed({ user }) {
 
 function RightCard({ title, children }) {
   return (
-    <section className="mb-8 rounded-lg bg-[#e6f0ea] p-7">
+    <section className="mb-8 rounded-lg border border-[#e5e7eb] bg-[#fafafa] p-7">
       {title && (
-        <h3 className="mb-6 text-lg font-extrabold text-[#1f2937]">{title}</h3>
+        <h3 className="mb-4 text-sm font-extrabold text-[#1f2937]">
+          {title}
+        </h3>
       )}
       {children}
     </section>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
+import { getTags } from "../../services/tagService";
 import "trix/dist/trix.css";
 import "trix";
 
@@ -19,23 +20,11 @@ function CreatePost({ user, existingPost = null }) {
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-
   useEffect(() => {
-    async function fetchTags() {
-      const { data, error } = await supabase
-        .from("tags")
-        .select("name")
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching tags:", error);
-        return;
-      }
-
-      setAvailableTags(data.map((t) => t.name));
+    async function loadTags() {const tags = await getTags();
+      setAvailableTags(tags);
     }
-
-    fetchTags();
+    loadTags();
   }, []);
 
   useEffect(() => {
@@ -252,7 +241,7 @@ function CreatePost({ user, existingPost = null }) {
             ← Cancel
           </button>
 
-          <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+          <label className="flex items-center gap-2 text-sm font-bold rounded-lg cursor-pointer  px-3 py-2 bg-[#f9fafb]">
             <input
               type="checkbox"
               checked={isAnonymous}
@@ -277,7 +266,7 @@ function CreatePost({ user, existingPost = null }) {
               type="button"
               onClick={handleSaveDraft}
               disabled={loading}
-              className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
+              className="flex h-9 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save Draft"}
             </button>
@@ -286,7 +275,7 @@ function CreatePost({ user, existingPost = null }) {
               type="button"
               onClick={handlePublish}
               disabled={loading}
-              className="h-11 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white disabled:opacity-50"
+              className="h-9 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white disabled:opacity-50"
             >
               {loading ? "Publishing..." : "Publish"}
             </button>
@@ -327,7 +316,7 @@ function CreatePost({ user, existingPost = null }) {
             placeholder="Write your title here..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-3 h-12 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+            className="mt-3 h-10 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </section>
 
@@ -355,9 +344,9 @@ function CreatePost({ user, existingPost = null }) {
               <button
                 type="button"
                 onClick={() => setShowTagPicker(!showTagPicker)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e7eb] text-lg font-bold text-[#3f6f4f] hover:bg-[#e6f0ea]"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e5e7eb] text-lg font-bold text-[#3f6f4f] hover:bg-[#e6f0ea]"
               >
-                +
+                + 
               </button>
 
               {showTagPicker && (
@@ -389,7 +378,7 @@ function CreatePost({ user, existingPost = null }) {
             ref={editorRef}
             input="trix-post-input"
             placeholder="Share your thoughts..."
-            class="mt-3 w-full min-h-56 rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
+            class="mt-3 w-full min-h-80 rounded-lg border border-[#e5e7eb] p-6 text-sm outline-none focus:border-[#3f6f4f]"
           />
         </section>
 
