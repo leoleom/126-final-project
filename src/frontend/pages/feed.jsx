@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
+import { getPosts } from "../utils/apiUtils";
 
 function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
@@ -21,8 +22,7 @@ function Feed({ user }) {
   async function fetchPosts() {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/posts");
-      const data = await response.json();
+      const { data } = await getPosts();
       // console.log("backend data:", data);
 
       // Shape data to match what PostCard expects

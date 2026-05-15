@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar";
 import PostCard from "../components/postCard";
+import { getUserPosts } from "../utils/apiUtils";
 
 function Profile({ user }) {
   const [posts, setPosts] = useState([]);
@@ -17,11 +18,7 @@ function Profile({ user }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}/posts`
-      );
-
-      const data = await response.json();
+      const { data } = await getUserPosts(user.id);
       // console.log("profile backend data:", data);
 
       const shaped = data.map((post) => ({
