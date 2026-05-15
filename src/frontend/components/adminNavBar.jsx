@@ -1,8 +1,16 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
+import {Home} from "lucide-react"
 
 function AdminNavbar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/");
+  }
+  
   const adminItems = [
     { label: "Overview", path: "/admin" },
     { label: "Users", path: "/admin/users" },
@@ -11,11 +19,22 @@ function AdminNavbar() {
     { label: "Settings", path: "/admin/settings" },
   ];
 
+
   return (
     <aside className="border-r border-[#e5e7eb] px-8 py-10">
-      <h1 className="text-2xl font-extrabold text-[#3f6f4f]">
-        Admin
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-[#3f6f4f]">
+          Admin
+        </h1>
+
+        <Link
+          to="/feed"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#3f6f4f]"
+          title="Home"
+        >
+          <Home size={20} />
+        </Link>
+      </div>
 
       <nav className="mt-10 space-y-4 text-sm font-extrabold">
         {adminItems.map((item) => {
