@@ -9,7 +9,7 @@ import Guidelines from "./pages/guidelines";
 import Feed from "./pages/feed";
 import CreatePost from "./pages/users/createPost";
 import ExpandedPost from "./pages/expandedPost";
-import EditDraft from "./pages/users/editDraft";
+import EditPost from "./pages/users/editPost";
 
 import Settings from "./pages/settings";
 import Profile from "./pages/profile";
@@ -91,7 +91,7 @@ function App() {
           element={<ProtectedRoute user={user} authReady={authReady}><CreatePost user={user} /></ProtectedRoute>}
         />
         <Route path="/post/:id"
-          element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost /></ProtectedRoute>}
+          element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost user={user} /></ProtectedRoute>}
         />
         <Route path="/settings"
           element={<ProtectedRoute user={user} authReady={authReady}><Settings user={user} setUser={setUser} /></ProtectedRoute>}
@@ -114,8 +114,8 @@ function App() {
         <Route path="/settings/change-password"
           element={<ProtectedRoute user={user} authReady={authReady}><ChangePassword setUser={setUser} /></ProtectedRoute>}
         />
-        <Route path="/drafts/:id/edit"
-          element={<ProtectedRoute user={user} authReady={authReady}><EditDraft user={user} /></ProtectedRoute>}
+        <Route path="/posts/:id/edit"
+          element={<ProtectedRoute user={user} authReady={authReady}><EditPost user={user} /></ProtectedRoute>}
         />
 
 

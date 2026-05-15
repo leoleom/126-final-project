@@ -2,61 +2,50 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar";
 import PostCard from "../components/postCard";
-import { supabase } from "../services/supabaseClient";
 
 function Profile({ user }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [bookmarkCount, setBookmarkCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchUserPosts();
-      fetchBookmarkCount();
     }
   }, [user]);
 
   async function fetchUserPosts() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        is_anonymous,
-        created_at,
-        post_tags (tags (name)),
-        votes (id, vote_type)
-      `)
-      .eq("author_id", user.id)
-      .in("status", ["live", "pending"])
-      .order("created_at", { ascending: false });
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/users/${user.id}/posts`
+      );
 
-    if (error) { console.error("Error fetching posts:", error); setLoading(false); return; }
+      const data = await response.json();
+      // console.log("profile backend data:", data);
 
-    const shaped = data.map((post) => ({
-      id: post.id,
-      title: post.title,
-      body: post.content,
-      time: formatTimeAgo(post.created_at),
-      tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
-      likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-      views: 0,
-    }));
+      const shaped = data.map((post) => ({
+        id: post.id,
+        title: post.title,
+        body: post.content,
+        time: formatTimeAgo(post.created_at),
+        tags:
+          post.post_tags
+            ?.map((pt) => pt.tags?.name)
+            .filter(Boolean) ?? [],
+        likes:
+          post.votes?.filter(
+            (v) => v.vote_type === "upvote"
+          ).length ?? 0,
+        views: 0,
+      }));
 
-    setPosts(shaped);
+      setPosts(shaped);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+
     setLoading(false);
-  }
-
-  async function fetchBookmarkCount() {
-    const { count, error } = await supabase
-      .from("bookmarks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
-    if (!error) setBookmarkCount(count ?? 0);
   }
 
   function formatTimeAgo(createdAt) {
@@ -127,7 +116,7 @@ function Profile({ user }) {
               <div className="ml-40 mt-8 flex gap-20 text-center">
                 <ProfileStat value={posts.length} label="Posts" />
                 <ProfileStat value={totalLikes} label="Likes" />
-                <ProfileStat value={bookmarkCount} label="Bookmarks" />
+                <ProfileStat value={0} label="Bookmarks" />
                 <ProfileStat value={totalViews} label="Views" />
               </div>
             </div>
@@ -155,6 +144,7 @@ function Profile({ user }) {
                   key={post.id}
                   id={post.id}
                   username={`@${user?.username ?? user?.display_name}`}
+                  profilePicture={user.avatar_url}
                   time={post.time}
                   title={post.title}
                   body={post.body}

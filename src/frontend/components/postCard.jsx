@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 function PostCard({
   id,
   username,
+  profilePicture,
   time,
   title,
   body,
@@ -13,9 +14,12 @@ function PostCard({
   onLike,
   onView,
   isDraft = false,
+  authorId,
+  user
 }) {
   // Controls the visibility of the Edit/Report dropdown menu
   const [showMenu, setShowMenu] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <article className="relative rounded-xl border border-[#e5e7eb] bg-white p-7">
@@ -23,9 +27,11 @@ function PostCard({
       {/* Post header: user info + action menu */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          
-          {/* Placeholder profile picture */}
-          <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+          {profilePicture ? (
+            <img src={profilePicture} alt={username} className="h-11 w-11 rounded-full object-cover" />
+          ) : ( 
+            <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+          )}
 
           {/* Username and timestamp */}
           <div>
@@ -52,13 +58,18 @@ function PostCard({
           {/* Dropdown menu appears when toggled */}
           {showMenu && (
             <div className="absolute right-0 top-8 w-36 rounded-lg border border-[#e5e7eb] bg-white shadow-sm">
-              <button className="block w-full px-4 py-3 text-left text-sm hover:bg-[#f3f4f6]">
-                Edit
-              </button>
-
-              <button className="block w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-[#f3f4f6]">
-                Report
-              </button>
+              {user?.id === authorId ? (
+                <button
+                  onClick={() => navigate(`/posts/${id}/edit`)}
+                  className="block w-full px-4 py-3 text-left text-sm hover:bg-[#f3f4f6]"
+                >
+                  Edit Post
+                </button>
+              ) : (
+                <button className="block w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-[#f3f4f6]">
+                  Report
+                </button>
+              )}
             </div>
           )}
         </div>
