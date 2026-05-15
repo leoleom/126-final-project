@@ -28,6 +28,7 @@
     "dompurify": "^3.4.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "lucide-react": "^1.16.0",
     "multer": "^2.1.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

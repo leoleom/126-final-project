@@ -9,9 +9,9 @@ function Settings({ user, setUser }) {
   const [displayName, setDisplayName] = useState(
     user?.display_name || user?.username || ""
   );
-  const [email, setEmail] = useState(user?.email || "leolem@up.edu.ph");
+  const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(
-    user?.bio || "Ako ay may lobo. Lumipad sa langit."
+    user?.bio || ""
   );
   const [profilePicture, setProfilePicture] = useState(
     user?.avatar_url || ""

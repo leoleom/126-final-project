@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Bookmark } from "lucide-react";
 
 function PostCard({
   id,
@@ -22,7 +23,7 @@ function PostCard({
   const navigate = useNavigate();
 
   return (
-    <article className="relative rounded-xl border border-[#e5e7eb] bg-white p-7">
+    <article className="relative rounded-xl border border-[#e5e7eb] bg-white p-7 shadow-sm">
       
       {/* Post header: user info + action menu */}
       <div className="flex items-start justify-between">
@@ -127,6 +128,8 @@ function PostCard({
 
         {/* View counter */}
         <span>{views} views</span>
+
+        <span><Bookmark size={20} /></span>
       </div>
     </article>
   );

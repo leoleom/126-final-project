@@ -14,7 +14,8 @@ function ExpandedPost({ user }) {
   const [commentLoading, setCommentLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
- 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   useEffect(() => {
     fetchPost();
     fetchComments();
@@ -124,9 +125,18 @@ function ExpandedPost({ user }) {
  
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <Navbar user={user} />
- 
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <Navbar
+          user={user}
+          setUser={setUser}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+
         <div className="grid grid-rows-[112px_1fr]">
           <TopBar user={user} searchQuery="" setSearchQuery={() => {}} />
  
