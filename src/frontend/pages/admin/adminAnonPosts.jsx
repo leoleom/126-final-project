@@ -4,7 +4,7 @@ import {
   getPendingAnonymousPosts,
   approveAnonymousPost,
   rejectAnonymousPost,
-} from "../../services/adminService";
+} from "../../utils/apiUtils";
 
 function AdminAnonPosts() {
   const [anonymousPosts, setAnonymousPosts] = useState([]);
@@ -18,8 +18,8 @@ function AdminAnonPosts() {
   }, []);
 
   async function loadAnonymousPosts() {
-    const posts = await getPendingAnonymousPosts();
-    setAnonymousPosts(posts);
+    const { data } = await getPendingAnonymousPosts();
+    setAnonymousPosts(data);
   }
 
   async function approvePost(id) {

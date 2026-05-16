@@ -113,6 +113,72 @@ export async function getUserDrafts(userId) {
 }
 
 
+/* ADMIN */
+export async function getAdminUsers() {
+  const response = await fetch(`${BASE_URL}/admin/users`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function getAdminDashboardData() {
+  const response = await fetch(`${BASE_URL}/admin/dashboard`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function getReportedPosts() {
+  const response = await fetch(`${BASE_URL}/admin/reports`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function resolveReportKeepPost(reportId) {
+  const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/keep`, {
+    method: "PATCH",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function resolveReportHidePost(reportId, postId) {
+  const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/hide/${postId}`, {
+    method: "PATCH",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function resolveReportDeletePost(reportId, postId) {
+  const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/delete/${postId}`, {
+    method: "PATCH",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function getPendingAnonymousPosts() {
+  const response = await fetch(`${BASE_URL}/admin/anonymous`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function approveAnonymousPost(postId) {
+  const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/approve`, {
+    method: "PATCH",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function rejectAnonymousPost(postId) {
+  const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/reject`, {
+    method: "PATCH",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+
 /* AUTHENTICATION */
 export async function loginUser(emailOrUsername, password) {
   const response = await fetch(`${BASE_URL}/auth/login`, {

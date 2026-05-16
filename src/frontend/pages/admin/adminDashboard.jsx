@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import AdminNavbar from "../../components/adminNavbar";
-import { getAdminDashboardData } from "../../services/adminService";
+import { getAdminDashboardData } from "../../utils/apiUtils";
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);

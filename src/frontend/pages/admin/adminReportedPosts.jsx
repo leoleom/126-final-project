@@ -5,7 +5,7 @@ import {
   resolveReportKeepPost,
   resolveReportHidePost,
   resolveReportDeletePost,
-} from "../../services/adminService";
+} from "../../utils/apiUtils";
 
 function AdminReportedPosts() {
   const [reportedPosts, setReportedPosts] = useState([]);

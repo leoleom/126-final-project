@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminNavbar from "../../components/adminNavbar";
-import { supabase } from "../../services/supabaseClient";
+import { getAdminUsers } from "../../utils/apiUtils";
 
 function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -13,27 +13,16 @@ function AdminUsers() {
   async function loadUsers() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("users")
-      .select("id, username, email, display_name, role, created_at")
-      .order("created_at", { ascending: false });
+    const { ok, data } = await getAdminUsers();
 
-    if (error) {
-      console.error("Error fetching users:", error);
+    if (!ok) {
+      console.error("Error fetching users");
       setUsers([]);
       setLoading(false);
       return;
     }
 
-    const formattedUsers = data.map((user) => ({
-      id: user.id,
-      username: user.username ? `@${user.username}` : "No username",
-      email: user.email || "No email",
-      role: user.role || "user",
-      status: "Active",
-    }));
-
-    setUsers(formattedUsers);
+    setUsers(data);
     setLoading(false);
   }
 
