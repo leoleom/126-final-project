@@ -79,6 +79,39 @@ export async function signupUser(email, username, password) {
   return { ok: response.ok, data };
 }
 
+export async function getTags() {
+  const response = await fetch(`${BASE_URL}/posts/tags/all`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function savePost(postId = null, payload) {
+  const url = postId ? `${BASE_URL}/posts/${postId}` : `${BASE_URL}/posts`;
+  const method = postId ? "PUT" : "POST";
+ 
+  const response = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function deletePost(postId) {
+  const response = await fetch(`${BASE_URL}/posts/${postId}`, {
+    method: "DELETE",
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function getUserDrafts(userId) {
+  const response = await fetch(`${BASE_URL}/users/${userId}/drafts`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
 
 /* AUTHENTICATION */
 export async function loginUser(emailOrUsername, password) {

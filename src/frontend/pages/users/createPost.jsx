@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "trix/dist/trix.css";
 import "trix";
+import { getTags, savePost, deletePost } from "../../utils/apiUtils";
 
 function CreatePost({ user, existingPost = null }) {
   const navigate = useNavigate();
@@ -18,14 +19,12 @@ function CreatePost({ user, existingPost = null }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   useEffect(() => {
     async function fetchTags() {
       try {
-        const response = await fetch( "http://localhost:5000/api/posts/tags/all");
-        const data = await response.json();
-
-        setAvailableTags( data.map((t) => t.name) );
+        const { data } = await getTags();
+        setAvailableTags(data.map((t) => t.name));
       } catch (error) {
         console.error("Error fetching tags:", error);
       }
@@ -55,7 +54,7 @@ function CreatePost({ user, existingPost = null }) {
     const handleAttachmentRemove = (e) => {
       console.log("Attachment removed:", e.attachment);
     };
-    
+
     // Sync trix content into our content state
     const handleChange = () => {
       setContent(input.value);
@@ -100,6 +99,7 @@ function CreatePost({ user, existingPost = null }) {
     if (!content.trim()) { setError("Please write something in your post."); return false; }
     return true;
   }
+
   // ── PUBLISH ──────────────────────────────────────────────
   async function handlePublish() {
     if (!validate()) return;
@@ -108,36 +108,22 @@ function CreatePost({ user, existingPost = null }) {
     setLoading(true);
 
     try {
-        const url = existingPost
-          ? `http://localhost:5000/api/posts/${existingPost.id}`
-          : "http://localhost:5000/api/posts";
+      const { ok, data } = await savePost(existingPost?.id ?? null, {
+        author_id: user.id,
+        title,
+        content,
+        is_anonymous: isAnonymous,
+        status:
+          existingPost?.status === "live"
+            ? "live"
+            : isAnonymous
+              ? "pending"
+              : "live",
+        selectedTags,
+      });
 
-        const method = existingPost
-          ? "PUT"
-          : "POST";
-
-        const response = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json", },
-          body: JSON.stringify({
-            author_id: user.id,
-            title,
-            content,
-            is_anonymous: isAnonymous,
-            status:
-            existingPost?.status === "live"
-              ? "live"
-              : isAnonymous
-                ? "pending"
-                : "live",
-            selectedTags,
-          }),
-        }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError( data.error ?? "Failed to publish post" );
+      if (!ok) {
+        setError(data.error ?? "Failed to publish post");
         setLoading(false);
         return;
       }
@@ -145,15 +131,16 @@ function CreatePost({ user, existingPost = null }) {
       navigate("/feed");
     } catch (error) {
       console.error(error);
-      setError( "Failed to publish post" );
+      setError("Failed to publish post");
     }
+
     setLoading(false);
   }
 
   // ── SAVE DRAFT ───────────────────────────────────────────
   async function handleSaveDraft() {
     if (!title.trim() && !content.trim()) {
-      setError( "Write something before saving a draft." );
+      setError("Write something before saving a draft.");
       return;
     }
 
@@ -161,35 +148,17 @@ function CreatePost({ user, existingPost = null }) {
     setLoading(true);
 
     try {
-        const url = existingPost
-          ? `http://localhost:5000/api/posts/${existingPost.id}`
-          : "http://localhost:5000/api/posts";
+      const { ok, data } = await savePost(existingPost?.id ?? null, {
+        author_id: user.id,
+        title,
+        content,
+        is_anonymous: isAnonymous,
+        status: "draft",
+        selectedTags,
+      });
 
-        const method = existingPost
-          ? "PUT"
-          : "POST";
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            author_id: user.id,
-            title,
-            content,
-            is_anonymous: isAnonymous,
-            status: "draft",
-            selectedTags,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError( data.error ?? "Failed to save draft" );
+      if (!ok) {
+        setError(data.error ?? "Failed to save draft");
         setLoading(false);
         return;
       }
@@ -197,7 +166,7 @@ function CreatePost({ user, existingPost = null }) {
       navigate("/drafts");
     } catch (error) {
       console.error(error);
-      setError( "Failed to save draft" );
+      setError("Failed to save draft");
     }
 
     setLoading(false);
@@ -207,19 +176,15 @@ function CreatePost({ user, existingPost = null }) {
   async function handleDeletePost() {
     setLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/posts/${existingPost.id}`,
-        { method: "DELETE",}
-      );
-      const data = await response.json();
+      const { ok, data } = await deletePost(existingPost.id);
 
-      if (!response.ok) {
-        setError( data.error ?? "Failed to delete draft" );
+      if (!ok) {
+        setError(data.error ?? "Failed to delete draft");
         setLoading(false);
         return;
       }
 
-      navigate(isDraft? "/drafts": "/feed");
+      navigate(isDraft ? "/drafts" : "/feed");
     } catch (error) {
       console.error(error);
       setError("Failed to delete draft");
@@ -271,18 +236,18 @@ function CreatePost({ user, existingPost = null }) {
                 {isDraft ? "Delete Draft" : "Delete Post"}
               </button>
             )}
-          {!isEditing || isDraft?
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={loading}
-              className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save Draft"}
-            </button>
-          :
-            <></>
-          }
+            {!isEditing || isDraft ?
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save Draft"}
+              </button>
+            :
+              <></>
+            }
 
             <button
               type="button"
@@ -290,7 +255,7 @@ function CreatePost({ user, existingPost = null }) {
               disabled={loading}
               className="h-11 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white disabled:opacity-50"
             >
-              {loading ? "Publishing..." : isEditing && !isDraft? "Save Changes" : "Publish"}
+              {loading ? "Publishing..." : isEditing && !isDraft ? "Save Changes" : "Publish"}
             </button>
           </div>
         </header>
@@ -301,8 +266,8 @@ function CreatePost({ user, existingPost = null }) {
         {showDeleteConfirm && (
           <div className="mt-6 flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 px-6 py-4">
             <p className="flex-1 text-sm font-semibold text-red-600">
-              Are you sure you want to delete this 
-              {isDraft? " draft" : " post"}?
+              Are you sure you want to delete this
+              {isDraft ? " draft" : " post"}?
               This cannot be undone.
             </p>
             <button
@@ -398,7 +363,6 @@ function CreatePost({ user, existingPost = null }) {
         </section>
 
       </main>
-
     </div>
   );
 }

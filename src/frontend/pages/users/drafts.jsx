@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar";
 import TopBar from "../../components/topBar";
 import PostCard from "../../components/postCard";
+import { getUserDrafts } from "../../utils/apiUtils";
 
 function Drafts({ user }) {
   const [drafts, setDrafts] = useState([]);
@@ -17,13 +18,13 @@ function Drafts({ user }) {
     setLoading(true);
 
     try {
-      const response = await fetch( `http://localhost:5000/api/users/${user.id}/drafts`);
-      const data = await response.json();
+      const { data } = await getUserDrafts(user.id);
       // console.log("draft backend data:", data);
       setDrafts(data);
     } catch (error) {
       console.error("Error fetching drafts:", error);
     }
+
     setLoading(false);
   }
 

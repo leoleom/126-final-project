@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CreatePost from "./createPost";
+import { getPostById } from "../../utils/apiUtils";
 
 function EditPost({ user }) {
   const { id } = useParams();
@@ -18,19 +19,18 @@ function EditPost({ user }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/posts/${id}`);
-      const data = await response.json();
+      const { ok, data } = await getPostById(id);
 
-      if (!response.ok) {
-        setError( data.error ?? "Post not found." );
+      if (!ok) {
+        setError(data.error ?? "Post not found.");
         setLoading(false);
         return;
       }
+
       setPost(data.post);
-      
     } catch (error) {
       console.error(error);
-      setError( "Failed to load post." );
+      setError("Failed to load post.");
     }
 
     setLoading(false);
