@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
 import SettingsNavbar from "../components/SettingsNavbar";
+import { updateUserProfile, uploadAvatar } from "../utils/apiUtils";
 
 function Settings({ user, setUser }) {
   const navigate = useNavigate();
@@ -24,50 +24,27 @@ function Settings({ user, setUser }) {
     const previewUrl = URL.createObjectURL(file);
     setProfilePicture(previewUrl);
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
+    const { ok, data } = await uploadAvatar(user.id, file);
 
-    const { error } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, {
-        upsert: true,
-      });
-
-    if (error) {
-      console.error(error);
+    if (!ok) {
+      console.error(data.error);
       alert("Upload failed.");
       return;
     }
-
-    const { data } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(filePath);
 
     setProfilePicture(data.publicUrl);
   }
 
   async function handleSave() {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            display_name: displayName,
-            bio,
-            avatar_url: profilePicture,
-          }),
-        }
-      );
+      const { ok, data } = await updateUserProfile(user.id, {
+        display_name: displayName,
+        bio,
+        avatar_url: profilePicture,
+      });
 
-      const data = await response.json();
-      if (!response.ok) {
-        alert( data.error ?? "Failed to save profile");
+      if (!ok) {
+        alert(data.error ?? "Failed to save profile");
         return;
       }
 

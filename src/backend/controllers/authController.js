@@ -46,4 +46,38 @@ async function login(req, res) {
   return res.status(200).json({ user: profile });
 }
 
-module.exports = { login };
+async function signup(req, res) {
+  const { email, username, password } = req.body;
+
+  // create auth user
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (signUpError) {
+    return res.status(400).json({ error: signUpError.message });
+  }
+
+  // insert user record
+  const { error: insertError } = await supabase
+    .from("users")
+    .insert({
+      id: data.user.id,
+      email: email,
+      display_name: username,
+      username: username,
+      avatar_url: null,
+      bio: null,
+      role: "user",
+      password: password,
+    });
+
+  if (insertError) {
+    return res.status(500).json({ error: insertError.message });
+  }
+
+  return res.status(200).json({ success: true });
+}
+
+module.exports = { login, signup };

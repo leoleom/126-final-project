@@ -20,14 +20,6 @@ export async function getComments(postId) {
   return { ok: response.ok, data };
 }
 
-
-/* USERS */
-export async function getUserPosts(userId) {
-  const response = await fetch(`${BASE_URL}/users/${userId}/posts`);
-  const data = await response.json();
-  return { ok: response.ok, data };
-}
- 
 export async function createComment(postId, authorId, content) {
   const response = await fetch(`${BASE_URL}/posts/${postId}/comments`, {
     method: "POST",
@@ -42,6 +34,51 @@ export async function createComment(postId, authorId, content) {
   const data = await response.json();
   return { ok: response.ok, data };
 }
+
+
+/* USERS */
+export async function getUserPosts(userId) {
+  const response = await fetch(`${BASE_URL}/users/${userId}/posts`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function updateUserProfile(userId, { display_name, bio, avatar_url }) {
+  const response = await fetch(`${BASE_URL}/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ display_name, bio, avatar_url }),
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+ 
+export async function uploadAvatar(userId, file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+ 
+  const response = await fetch(`${BASE_URL}/users/${userId}/avatar`, {
+    method: "POST",
+    body: formData,
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function signupUser(email, username, password) {
+  const response = await fetch(`${BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, username, password }),
+  });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
 
 /* AUTHENTICATION */
 export async function loginUser(emailOrUsername, password) {
