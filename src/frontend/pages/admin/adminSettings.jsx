@@ -5,15 +5,23 @@ function AdminSettings() {
   const [allowAnonymousPosts, setAllowAnonymousPosts] = useState(true);
   const [manualReview, setManualReview] = useState(true);
   const [reportsThreshold, setReportsThreshold] = useState(5);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   function handleSave() {
-    alert("Admin settings saved.");
+    alert("Admin settings saved for this session.");
   }
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <AdminNavbar />
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <AdminNavbar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main className="px-8 py-9">
           <h1 className="text-3xl font-extrabold">Admin Settings</h1>
@@ -51,7 +59,7 @@ function AdminSettings() {
             </div>
 
             <button
-              onClick={handleSave}
+            onClick={handleSave}
               className="mt-6 h-11 rounded-lg bg-[#3f6f4f] px-8 text-sm font-extrabold text-white"
             >
               Save Changes

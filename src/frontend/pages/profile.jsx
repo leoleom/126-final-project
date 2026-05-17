@@ -7,6 +7,8 @@ import { getUserPosts } from "../utils/apiUtils";
 function Profile({ user }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
 
   useEffect(() => {
     if (user) {
@@ -63,8 +65,17 @@ function Profile({ user }) {
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <Navbar user={user} />
+     <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <Navbar
+          user={user}
+
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main>
           <section>

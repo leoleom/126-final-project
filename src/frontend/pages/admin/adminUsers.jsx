@@ -5,6 +5,7 @@ import { getAdminUsers } from "../../utils/apiUtils";
 function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     loadUsers();
@@ -27,7 +28,7 @@ function AdminUsers() {
   }
 
   return (
-    <AdminPage title="Users">
+    <AdminPage title="Users" sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
       {loading ? (
         <p className="mt-8 text-sm font-semibold text-[#6b7280]">
           Loading users...
@@ -43,11 +44,18 @@ function AdminUsers() {
   );
 }
 
-function AdminPage({ title, children }) {
+function AdminPage({ title, children, sidebarOpen, setSidebarOpen }) {
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <AdminNavbar />
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <AdminNavbar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main className="px-8 py-9">
           <h1 className="text-3xl font-extrabold">{title}</h1>
@@ -75,10 +83,7 @@ function AdminTable({ columns, rows, fields }) {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                className="px-7 py-6 text-sm font-semibold text-[#6b7280]"
-              >
+              <td colSpan={columns.length} className="px-7 py-6 text-sm font-semibold text-[#6b7280]">
                 No users found.
               </td>
             </tr>

@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+console.log("BASE_URL:", BASE_URL);
 /* POSTS */
 
 export async function getPosts() {
@@ -163,19 +163,27 @@ export async function getPendingAnonymousPosts() {
 }
  
 export async function approveAnonymousPost(postId) {
-  const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/approve`, {
-    method: "PATCH",
-  });
-  const data = await response.json();
-  return { ok: response.ok, data };
+  try{
+    const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/approve`, {
+      method: "PATCH",
+    });
+    const data = await response.json();
+    return { ok: response.ok, data };
+  } catch (error) {
+    return {ok: false, data: { error: error.message },};
+  }
 }
  
 export async function rejectAnonymousPost(postId) {
-  const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/reject`, {
-    method: "PATCH",
-  });
-  const data = await response.json();
-  return { ok: response.ok, data };
+  try{
+    const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/reject`, {
+      method: "PATCH",
+    });
+    const data = await response.json();
+    return { ok: response.ok, data };
+  } catch (error) {
+    return {ok: false, data: { error: error.message },};
+  }
 }
 
 
@@ -188,6 +196,16 @@ export async function loginUser(emailOrUsername, password) {
     },
     body: JSON.stringify({ emailOrUsername, password }),
   });
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function logoutUser() {
+  const response = await fetch(`${BASE_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
   const data = await response.json();
   return { ok: response.ok, data };
 }

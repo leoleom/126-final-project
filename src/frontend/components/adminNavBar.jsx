@@ -1,23 +1,93 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
+import {
+  Home,
+  LayoutDashboard,
+  Users,
+  MessageSquareWarning,
+  Flag,
+  Settings,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 
-function AdminNavbar() {
+function AdminNavbar({ user, sidebarOpen, setSidebarOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {alert("Logout failed.");return;}
+
+    navigate("/");
+  }
 
   const adminItems = [
-    { label: "Overview", path: "/admin" },
-    { label: "Users", path: "/admin/users" },
-    { label: "Review Anonymous Posts", path: "/admin/anonymous-posts" },
-    { label: "Reported Posts", path: "/admin/reported-posts" },
-    { label: "Settings", path: "/admin/settings" },
+    {
+      label: "Overview",
+      path: "/admin",
+      icon: <LayoutDashboard size={18} />,
+    },
+    {
+      label: "Users",
+      path: "/admin/users",
+      icon: <Users size={18} />,
+    },
+    {
+      label: "Review Anonymous Posts",
+      path: "/admin/anonymous-posts",
+      icon: <MessageSquareWarning size={18} />,
+    },
+    {
+      label: "Reported Posts",
+      path: "/admin/reported-posts",
+      icon: <Flag size={18} />,
+    },
+    {
+      label: "Settings",
+      path: "/admin/settings",
+      icon: <Settings size={18} />,
+    },
   ];
 
-  return (
-    <aside className="border-r border-[#e5e7eb] px-8 py-10">
-      <h1 className="text-2xl font-extrabold text-[#3f6f4f]">
-        Admin
-      </h1>
 
-      <nav className="mt-10 space-y-4 text-sm font-extrabold">
+  return (
+    <aside className="border-r border-[#e5e7eb] px-6 py-10">
+      <div className="flex items-center justify-between">
+        {sidebarOpen && (
+          <h1 className="text-2xl font-extrabold text-[#3f6f4f]">
+            Admin
+          </h1>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#3f6f4f]"
+          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose size={18} />
+          ) : (
+            <PanelLeftOpen size={18} />
+          )}
+        </button>
+      </div>
+
+      <Link
+        to="/feed"
+        className={`mt-8 flex h-12 items-center gap-3 rounded-lg text-sm font-extrabold text-[#111827] transition hover:bg-[#f9fafb] ${
+          sidebarOpen ? "px-5" : "justify-center px-0"
+        }`}
+        title="Home"
+      >
+        <Home size={18} />
+        {sidebarOpen && <span>Home</span>}
+      </Link>
+
+      <nav className="mt-8 space-y-3 text-sm font-extrabold">
         {adminItems.map((item) => {
           const isActive = location.pathname === item.path;
 
@@ -25,24 +95,32 @@ function AdminNavbar() {
             <Link
               key={item.label}
               to={item.path}
-              className={`flex min-h-12 items-center rounded-lg px-6 ${
+              title={item.label}
+              className={`flex min-h-12 items-center gap-3 rounded-lg transition ${
+                sidebarOpen ? "px-5" : "justify-center px-0"
+              } ${
                 isActive
-                  ? "bg-[#e6f0ea] text-[#111827]"
-                  : "text-[#111827]"
+                  ? "bg-[#e6f0ea] text-[#3f6f4f]"
+                  : "text-[#111827] hover:bg-[#f9fafb]"
               }`}
             >
-              {item.label}
+              {item.icon}
+              {sidebarOpen && <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Logout button */}
       <button
+        type="button"
         onClick={handleLogout}
-        className="mt-28 block px-7 text-sm font-extrabold text-left text-[#111827] hover:text-red-500"
+        className={`mt-24 flex h-12 items-center gap-3 text-sm font-extrabold text-[#111827] transition hover:text-red-500 ${
+          sidebarOpen ? "px-5" : "w-12 justify-center"
+        }`}
+        title="Logout"
       >
-        Logout
+        <LogOut size={18} />
+        {sidebarOpen && <span>Logout</span>}
       </button>
     </aside>
   );

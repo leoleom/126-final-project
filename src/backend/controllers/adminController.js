@@ -3,8 +3,14 @@ const supabase = require("../config/supabaseClient");
 // dashboard
 
 const getAdminDashboardData = async (req, res) => {
-  const { data: users } = await supabase.from("users").select("*");
-  const { data: posts } = await supabase.from("posts").select("id, title");
+  const { data: users, error: usersError } = await supabase
+  .from("users")
+  .select("id, username, email, display_name, role");
+
+  console.log("dashboard users:", users);
+  console.log("dashboard users error:", usersError);
+  
+  const { data: posts } = await supabase.from("posts").select("id, title, status");
 
   const { data: anonymousPosts, error: anonymousError } = await supabase
     .from("posts")
@@ -30,7 +36,6 @@ const getAdminDashboardData = async (req, res) => {
         display_name
       )
     `)
-    .eq("status", "pending");
 
   return res.status(200).json({
     users: users || [],
@@ -77,7 +82,6 @@ const getReportedPosts = async (req, res) => {
         display_name
       )
     `)
-    .eq("status", "pending")
     .order("created_at", { ascending: false });
 
   console.log("flags data:", data);
@@ -185,7 +189,6 @@ const getPendingAnonymousPosts = async (req, res) => {
       is_anonymous
     `)
     .eq("is_anonymous", true)
-    .eq("status", "pending")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -236,7 +239,6 @@ const rejectAnonymousPost = async (req, res) => {
 
   return res.status(200).json({ success: true });
 };
-1
 
 // users
 const getAdminUsers = async (req, res) => {
