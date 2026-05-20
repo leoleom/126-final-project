@@ -195,11 +195,11 @@ function CreatePost({ user, existingPost = null }) {
   // ── CANCEL ───────────────────────────────────────────────
   function handleCancel() {
     if (!title.trim() && !content.trim()) {
-      navigate(isEditing ? "/drafts" : "/feed");
+      navigate(isEditing ? "/feed" : "/drafts");
       return;
     }
     const leave = window.confirm("Discard changes? Any unsaved edits will be lost.");
-    if (leave) navigate(isEditing ? "/drafts" : "/feed");
+    if (leave) navigate(isEditing ? "/feed" : "/drafts");
   }
 
   return (

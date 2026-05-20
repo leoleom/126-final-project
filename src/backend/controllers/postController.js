@@ -30,7 +30,6 @@ const getPosts = async (req, res) => {
     console.error("Supabase error:", error);
     return res.status(500).json({error: error.message,});
   }
-
   res.json(data);
 };
 
@@ -117,26 +116,39 @@ const createPost = async (req, res) => {
 const deletePost = async (req, res) => {
   const { postId } = req.params;
 
-  await supabase
+  console.log("Deleting post:", postId);
+
+  const tagDelete = await supabase
     .from("post_tags")
     .delete()
     .eq("post_id", postId);
 
-  const { error } = await supabase
+  console.log("Tag delete:", tagDelete);
+
+  const postDelete = await supabase
     .from("posts")
     .delete()
-    .eq("id", postId);
+    .eq("id", postId)
+    .select();
 
-  if (error) {
+  console.log("Post delete:", postDelete);
+
+  if (postDelete.error) {
     return res.status(500).json({
-      error: error.message,
+      error: postDelete.error.message,
+    });
+  }
+
+  if (!postDelete.data || postDelete.data.length === 0) {
+    return res.status(403).json({
+      error: "Delete blocked or post not found",
     });
   }
 
   res.json({
     success: true,
   });
-}
+};
 
 const updatePost = async (req, res) => {
   const { postId } = req.params;

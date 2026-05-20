@@ -254,7 +254,7 @@ function Feed({user}) {
                       username={post.username}
                       authorId={post.authorId}
                       user={user}
-                      profilePicture={post.avatarUrl}
+                      profilePicture={post.profilePicture}
                       time={formatTimeAgo(post.createdAt)}
                       title={post.title}
                       body={post.body}

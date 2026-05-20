@@ -185,7 +185,6 @@ function ExpandedPost({ user }) {
       >
         <Navbar
           user={user}
-          setUser={setUser}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
