@@ -19,7 +19,7 @@ const getPosts = async (req, res) => {
       post_tags (
         tags (name)
       ),
-      votes (id, vote_type)
+      votes (id, vote_type, author_id)
     `)
     .eq("status", "live")
     .order("created_at", {
@@ -212,7 +212,7 @@ const getPost = async (req, res) => {
       ),
       status,
       post_tags (tags (name)),
-      votes (id, vote_type)
+      votes (id, vote_type, author_id)
     `)
     .eq("id", postId)
     .single();
@@ -302,6 +302,62 @@ const createComment = async (req, res) => {
   res.status(201).json(data);
 }
 
+const toggleVote = async (req, res) => {
+  const { postId } = req.params;
+  const { author_id } = req.body;
+
+  if (!author_id) {
+    return res.status(400).json({
+      error: "Missing author_id",
+    });
+  }
+
+  // Check if vote already exists
+  const { data: existingVote, error: fetchError } = await supabase
+    .from("votes")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("author_id", author_id)
+    .maybeSingle();
+
+  // If already liked → remove like
+  if (existingVote) {
+    const { error: deleteError } = await supabase
+      .from("votes")
+      .delete()
+      .eq("id", existingVote.id);
+
+    if (deleteError) {
+      return res.status(500).json({
+        error: deleteError.message,
+      });
+    }
+
+    return res.json({
+      liked: false,
+    });
+  }
+
+  // Otherwise create like
+  const { error: insertError } = await supabase
+    .from("votes")
+    .insert({
+      post_id: postId,
+      author_id,
+      vote_type: "upvote",
+    });
+
+  if (insertError) {
+    return res.status(500).json({
+      error: insertError.message,
+    });
+  }
+
+  return res.json({
+    liked: true,
+  });
+};
+
 module.exports = {
   getPosts,
   getTags,
@@ -312,5 +368,7 @@ module.exports = {
   getPost,
 
   getComments,
-  createComment
+  createComment,
+
+  toggleVote
 };

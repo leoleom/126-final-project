@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
-import { getPosts, getTags } from "../utils/apiUtils";
+import { getPosts, getTags, toggleVote } from "../utils/apiUtils";
 
 function Feed({user}) {
   const [activeTab, setActiveTab] = useState("Latest");
@@ -63,6 +63,13 @@ function Feed({user}) {
         body: post.content,
         tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
         likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+
+        likedByUser:
+          post.votes?.some(
+            (v) =>
+              v.vote_type === "upvote" &&
+              v.author_id === user?.id
+          ) ?? false,
         views: 0,
       }));
 
@@ -88,12 +95,33 @@ function Feed({user}) {
     return `${days}d ago`;
   }
 
-  function handleLike(postId) {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId ? { ...post, likes: post.likes + 1 } : post
-      )
-    );
+  async function handleLike(postId) {
+    if (!user) return;
+
+    try {
+      const { ok, data } = await toggleVote(postId, user.id);
+
+      if (!ok) {
+        console.error(data.error);
+        return;
+      }
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            likedByUser: data.liked,
+            likes: data.liked
+              ? post.likes + 1
+              : Math.max(post.likes - 1, 0),
+          };
+        })
+      );
+    } catch (error) {
+      console.error("Vote failed:", error);
+    }
   }
 
   function toggleTag(tag) {
@@ -232,6 +260,7 @@ function Feed({user}) {
                       body={post.body}
                       tags={post.tags}
                       likes={post.likes}
+                      likedByUser={post.likedByUser}
                       views={post.views}
                       onLike={() => handleLike(post.id)}
                       onView={() => {}}

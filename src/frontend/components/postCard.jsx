@@ -11,6 +11,7 @@ function PostCard({
   body,
   tags,
   likes,
+  likedByUser,
   views,
   onLike,
   onView,
@@ -121,7 +122,11 @@ function PostCard({
         <button
           type="button"
           onClick={onLike}
-          className="font-bold hover:text-[#3f6f4f]"
+          className={`flex items-center gap-2 ${
+            likedByUser
+              ? "text-red-500"
+              : "text-[#6b7280]"
+          }`}
         >
           ♥ {likes} likes
         </button>

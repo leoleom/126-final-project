@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
-import { getPostById, getComments, createComment } from "../utils/apiUtils";
+import { getPostById, getComments, createComment, toggleVote } from "../utils/apiUtils";
  
 function ExpandedPost({ user }) {
   const { id } = useParams();
@@ -45,10 +45,20 @@ function ExpandedPost({ user }) {
  
   async function fetchComments() {
     try {
-      const { data } = await getComments(id);
-      setComments(data ?? []);
+      const { ok, data } = await getComments(id);
+
+      console.log("COMMENTS RESPONSE:", data);
+
+      if (!ok) {
+        console.error("Failed to fetch comments:", data);
+        setComments([]);
+        return;
+      }
+
+      setComments(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching comments:", error);
+      setComments([]);
     }
   }
  
@@ -81,6 +91,43 @@ function ExpandedPost({ user }) {
     setCommentLoading(false);
   }
  
+  async function handleLike() {
+    if (!user) return;
+
+    try {
+      const { ok, data } = await toggleVote(post.id, user.id);
+
+      if (!ok) {
+        console.error(data.error);
+        return;
+      }
+
+      setPost((prev) => {
+        if (!prev) return prev;
+
+        let updatedVotes = [...(prev.votes ?? [])];
+
+        if (data.liked) {
+          updatedVotes.push({
+            vote_type: "upvote",
+            author_id: user.id,
+          });
+        } else {
+          updatedVotes = updatedVotes.filter(
+            (v) => !(v.author_id === user.id && v.vote_type === "upvote")
+          );
+        }
+
+        return {
+          ...prev,
+          votes: updatedVotes,
+        };
+      });
+    } catch (error) {
+      console.error("Like failed:", error);
+    }
+  }
+
   function formatTimeAgo(createdAt) {
     const now = new Date();
     const postDate = new Date(createdAt);
@@ -119,6 +166,12 @@ function ExpandedPost({ user }) {
  
   const tags = post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [];
   const likes = post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0;
+  const likedByUser =
+  post.votes?.some(
+    (v) =>
+      v.vote_type === "upvote" &&
+      v.author_id === user?.id
+  ) ?? false;
   const authorName = post.is_anonymous
     ? "Anonymous"
     : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`;
@@ -188,7 +241,18 @@ function ExpandedPost({ user }) {
                   />
  
                   <div className="mt-6 flex gap-6 text-sm font-bold text-[#9ca3af]">
-                    <span>{likes} Likes</span>
+                    {/* Like button */}
+                    <button
+                      type="button"
+                      onClick={handleLike}
+                      className={`flex items-center gap-2 transition ${
+                        likedByUser
+                          ? "text-red-500"
+                          : "text-[#9ca3af] hover:text-red-400"
+                      }`}
+                    >
+                      ♥ {likes} Likes
+                    </button>
                     <span>{comments.length} Comments</span>
                   </div>
                 </article>

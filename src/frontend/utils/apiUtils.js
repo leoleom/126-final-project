@@ -209,3 +209,22 @@ export async function logoutUser() {
   const data = await response.json();
   return { ok: response.ok, data };
 }
+
+export async function toggleVote(postId, authorId) {
+  const response = await fetch(`${BASE_URL}/posts/${postId}/vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      author_id: authorId,
+    }),
+  });
+
+  const data = await response.json();
+
+  return {
+    ok: response.ok,
+    data,
+  };
+}
