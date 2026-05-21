@@ -7,8 +7,7 @@ const getAdminDashboardData = async (req, res) => {
   .from("users")
   .select("id, username, email, display_name, role");
 
-  console.log("dashboard users:", users);
-  console.log("dashboard users error:", usersError);
+  
   
   const { data: posts } = await supabase.from("posts").select("id, title, status");
 
@@ -19,8 +18,7 @@ const getAdminDashboardData = async (req, res) => {
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  console.log("dashboard anonymous posts:", anonymousPosts);
-  console.log("dashboard anonymous error:", anonymousError);
+  
 
   const { data: reportedPosts } = await supabase
     .from("flags")
@@ -84,8 +82,7 @@ const getReportedPosts = async (req, res) => {
     `)
     .order("created_at", { ascending: false });
 
-  console.log("flags data:", data);
-  console.log("flags error:", error);
+  
 
   if (error) return res.status(500).json({ error: error.message });
 
@@ -113,8 +110,7 @@ const resolveReportKeepPost = async (req, res) => {
     .eq("id", reportId)
     .select();
 
-  console.log("keep result:", data);
-  console.log("keep error:", error);
+  
 
   if (error) return res.status(500).json({ error: error.message });
 
@@ -130,8 +126,7 @@ const resolveReportHidePost = async (req, res) => {
     .eq("id", postId)
     .select();
 
-  console.log("hide post result:", postData);
-  console.log("hide post error:", postError);
+  
 
   if (postError) return res.status(500).json({ error: postError.message });
 
@@ -141,8 +136,7 @@ const resolveReportHidePost = async (req, res) => {
     .eq("id", reportId)
     .select();
 
-  console.log("resolve flag result:", flagData);
-  console.log("resolve flag error:", flagError);
+  
 
   if (flagError) return res.status(500).json({ error: flagError.message });
 
