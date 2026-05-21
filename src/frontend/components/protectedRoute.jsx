@@ -1,9 +1,15 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
-function ProtectedRoute({ user, authReady, children }) {
-  if (!authReady) return null;
-  if (!user) return <Navigate to="/" replace />;
-  return children;
-}
+const ProtectedRoute = ({ user, authReady }) => {
+  if (!authReady) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+};
 
 export default ProtectedRoute;
