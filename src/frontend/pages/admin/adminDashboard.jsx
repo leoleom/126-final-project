@@ -1,38 +1,44 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
 import AdminNavbar from "../../components/adminNavbar";
-import { getAdminDashboardData } from "../../services/adminService";
+import { getAdminDashboardData } from "../../utils/apiUtils";
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
   const [anonymousPosts, setAnonymousPosts] = useState([]);
   const [reportedPosts, setReportedPosts] = useState([]);
-
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
   useEffect(() => {
-    async function loadAdminData() {
-      const data = await getAdminDashboardData();
-
-      setUsers(data.users);
-      setPosts(data.posts);
-      setAnonymousPosts(data.anonymousPosts);
-      setReportedPosts(data.reportedPosts);
-    }
-
     loadAdminData();
   }, []);
 
-  const activeUsers = users.filter(
-    (user) => user.status === "Active"
+  async function loadAdminData() {
+    const {ok, data} = await getAdminDashboardData();
+
+    if (!ok) {
+      console.error("Error fetching admin dashboard data:", data);
+      setUsers([]);
+      setPosts([]);
+      setAnonymousPosts([]);
+      setReportedPosts([]);
+      return;
+    }
+    setUsers(data.users || []);
+    setPosts(data.posts || []);
+    setAnonymousPosts(data.anonymousPosts || []);
+    setReportedPosts(data.reportedPosts || []);
+  }
+
+  const livePosts = (posts || []).filter((post) => post.status === "live").length;
+
+  const pendingReports = (reportedPosts || []).filter(
+    (post) => post.status === "pending"
   ).length;
 
-  const pendingReports = reportedPosts.filter(
-    (post) => post.status === "Pending"
-  ).length;
-
-  const pendingAnonymousPosts = anonymousPosts.filter(
-    (post) => post.status === "Pending"
+  const pendingAnonymousPosts = (anonymousPosts || []).filter(
+    (post) => post.status === "pending"
   ).length;
 
   const stats = [
@@ -43,25 +49,32 @@ function AdminDashboard() {
     },
     {
       label: "Total Posts",
-      value: posts.length + anonymousPosts.length,
+      value: posts.length,
       change: `${pendingAnonymousPosts} pending anonymous`,
     },
     {
-      label: "Reported Posts",
+      label: "Total Reports",
       value: reportedPosts.length,
       change: `${pendingReports} pending`,
     },
     {
-      label: "Active Now",
-      value: activeUsers,
-      change: "Online",
+      label: "Live Posts",
+      value: livePosts,
+      change: "Currently visible",
     },
   ];
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <AdminNavbar />
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <AdminNavbar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main className="px-8 py-9">
           <section className="grid grid-cols-4 gap-5">
@@ -81,9 +94,9 @@ function AdminDashboard() {
 
           <DataTable
             title="Recent Reported Posts"
-            columns={["Post", "Reported by", "Reason", "Date", "Status"]}
+            columns={["Post", "Reported by", "Date", "Status"]}
             rows={reportedPosts}
-            fields={["post", "reportedBy", "reason", "date", "status"]}
+            fields={["post", "reportedBy", "date", "status"]}
             linkText="View all reported posts"
             linkPath="/admin/reported-posts"
           />
@@ -126,16 +139,13 @@ function DataTable({ title, columns, rows, fields, linkText, linkPath }) {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                className="px-7 py-6 text-sm font-semibold text-[#6b7280]"
-              >
+              <td colSpan={columns.length} className="px-7 py-6 text-sm font-semibold text-[#6b7280]">
                 No data available.
               </td>
             </tr>
           ) : (
             rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="border-t border-[#e5e7eb]">
+              <tr key={row.id || rowIndex} className="border-t border-[#e5e7eb]">
                 {fields.map((field) => (
                   <td key={field} className="px-7 py-4 font-semibold">
                     {field === "status" ? (
@@ -151,10 +161,7 @@ function DataTable({ title, columns, rows, fields, linkText, linkPath }) {
         </tbody>
       </table>
 
-      <Link
-        to={linkPath}
-        className="block px-7 py-4 text-sm font-extrabold text-[#3f6f4f]"
-      >
+      <Link to={linkPath} className="block px-7 py-4 text-sm font-extrabold text-[#3f6f4f]">
         {linkText} →
       </Link>
     </section>
@@ -162,17 +169,19 @@ function DataTable({ title, columns, rows, fields, linkText, linkPath }) {
 }
 
 function StatusBadge({ status }) {
+  const label = status === "live" ? "approved" : status;
+
   return (
     <span
       className={`rounded-full px-4 py-1 text-xs font-extrabold ${
-        status === "Pending"
+        status === "pending"
           ? "bg-[#fde68a] text-[#92400e]"
-          : status === "Reviewed" || status === "Approved"
+          : status === "live" || status === "resolved"
           ? "bg-[#bbf7d0] text-[#166534]"
           : "bg-[#fecaca] text-[#991b1b]"
       }`}
     >
-      {status}
+      {label}
     </span>
   );
 }

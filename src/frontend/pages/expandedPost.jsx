@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
-
+import { getPostById, getComments, createComment, toggleVote } from "../utils/apiUtils";
+ 
 function ExpandedPost({ user }) {
   const { id } = useParams();
-
+ 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [authorPostCount, setAuthorPostCount] = useState(0);
@@ -14,85 +14,118 @@ function ExpandedPost({ user }) {
   const [commentLoading, setCommentLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     fetchPost();
     fetchComments();
   }, [id]);
-
+ 
   async function fetchPost() {
     setLoading(true);
-
-    const { data, error: fetchError } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        is_anonymous,
-        created_at,
-        author_id,
-        author:users (id, username, display_name, avatar_url, bio, created_at),
-        post_tags (tags (name)),
-        votes (id, vote_type)
-      `)
-      .eq("id", id)
-      .single();
-
-    if (fetchError || !data) {
-      setError("Post not found.");
-      setLoading(false);
-      return;
+ 
+    try {
+      const { ok, data } = await getPostById(id);
+ 
+      if (!ok) {
+        setError("Post not found.");
+        setLoading(false);
+        return;
+      }
+ 
+      setPost(data.post);
+      setAuthorPostCount(data.authorPostCount);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to load post.");
     }
-
-    // fetch author post count
-    const { count } = await supabase
-      .from("posts")
-      .select("*", { count: "exact", head: true })
-      .eq("author_id", data.author_id)
-      .eq("status", "live");
-
-    setAuthorPostCount(count ?? 0);
-    setPost(data);
+ 
     setLoading(false);
   }
-
+ 
   async function fetchComments() {
-    const { data, error: fetchError } = await supabase
-      .from("comments")
-      .select(`
-        id,
-        content,
-        created_at,
-        author:users (username, display_name, avatar_url)
-      `)
-      .eq("post_id", id)
-      .order("created_at", { ascending: false });
+    try {
+      const { ok, data } = await getComments(id);
 
-    if (!fetchError) setComments(data ?? []);
+      console.log("COMMENTS RESPONSE:", data);
+
+      if (!ok) {
+        console.error("Failed to fetch comments:", data);
+        setComments([]);
+        return;
+      }
+
+      setComments(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setComments([]);
+    }
   }
-
+ 
   async function handleAddComment() {
-    if (!newComment.trim()) return;
-    setCommentLoading(true);
-
-    const { error: insertError } = await supabase
-      .from("comments")
-      .insert({
-        post_id: id,
-        author_id: user.id,
-        content: newComment.trim(),
-      });
-
-    if (insertError) {
-      console.error("Error adding comment:", insertError);
-      setCommentLoading(false);
+    if (!user) {
+      console.error("User not loaded");
       return;
     }
-
-    setNewComment("");
+ 
+    if (!newComment.trim()) return;
+ 
+    setCommentLoading(true);
+ 
+    try {
+      const { ok, data } = await createComment(id, user.id, newComment);
+ 
+      if (!ok) {
+        console.error(data.error);
+        setCommentLoading(false);
+        return;
+      }
+ 
+      setNewComment("");
+ 
+      fetchComments();
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    }
+ 
     setCommentLoading(false);
-    fetchComments(); // refresh comments
+  }
+ 
+  async function handleLike() {
+    if (!user) return;
+
+    try {
+      const { ok, data } = await toggleVote(post.id, user.id);
+
+      if (!ok) {
+        console.error(data.error);
+        return;
+      }
+
+      setPost((prev) => {
+        if (!prev) return prev;
+
+        let updatedVotes = [...(prev.votes ?? [])];
+
+        if (data.liked) {
+          updatedVotes.push({
+            vote_type: "upvote",
+            author_id: user.id,
+          });
+        } else {
+          updatedVotes = updatedVotes.filter(
+            (v) => !(v.author_id === user.id && v.vote_type === "upvote")
+          );
+        }
+
+        return {
+          ...prev,
+          votes: updatedVotes,
+        };
+      });
+    } catch (error) {
+      console.error("Like failed:", error);
+    }
   }
 
   function formatTimeAgo(createdAt) {
@@ -107,19 +140,19 @@ function ExpandedPost({ user }) {
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
   }
-
+ 
   function formatJoinDate(createdAt) {
     return new Date(createdAt).toLocaleDateString("en-US", {
       month: "long", year: "numeric",
     });
   }
-
+ 
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center text-sm text-[#6b7280]">
       Loading post...
     </div>
   );
-
+ 
   if (error || !post) return (
     <div className="flex min-h-screen items-center justify-center bg-[#f7f8f7] text-[#1f2937]">
       <div className="text-center">
@@ -130,28 +163,42 @@ function ExpandedPost({ user }) {
       </div>
     </div>
   );
-
+ 
   const tags = post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [];
   const likes = post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0;
+  const likedByUser =
+  post.votes?.some(
+    (v) =>
+      v.vote_type === "upvote" &&
+      v.author_id === user?.id
+  ) ?? false;
   const authorName = post.is_anonymous
     ? "Anonymous"
     : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`;
-
+ 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <Navbar user={user} />
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <Navbar
+          user={user}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <div className="grid grid-rows-[112px_1fr]">
           <TopBar user={user} searchQuery="" setSearchQuery={() => {}} />
-
+ 
           <div className="px-10 py-10">
             <main className="mx-auto grid max-w-[1100px] grid-cols-[1fr_260px] gap-10">
               <section>
                 <Link to="/feed" className="text-sm font-extrabold text-[#374151]">
                   ← Back to all posts
                 </Link>
-
+ 
                 {/* Post */}
                 <article className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
                   <div className="flex items-center gap-4">
@@ -164,7 +211,7 @@ function ExpandedPost({ user }) {
                     ) : (
                       <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
                     )}
-
+ 
                     <div>
                       <p className="text-sm font-extrabold">{authorName}</p>
                       <p className="text-xs font-semibold text-[#9ca3af]">
@@ -172,9 +219,9 @@ function ExpandedPost({ user }) {
                       </p>
                     </div>
                   </div>
-
+ 
                   <h1 className="mt-8 text-2xl font-extrabold">{post.title}</h1>
-
+ 
                   <div className="mt-6 flex flex-wrap gap-4">
                     {tags.map((tag) => (
                       <span
@@ -185,28 +232,43 @@ function ExpandedPost({ user }) {
                       </span>
                     ))}
                   </div>
-
+ 
                   {/* Render Trix HTML content */}
                   <div
                     className="mt-6 text-sm leading-6 text-[#374151] prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
                   />
-
+ 
                   <div className="mt-6 flex gap-6 text-sm font-bold text-[#9ca3af]">
-                    <span>{likes} Likes</span>
+                    {/* Like button */}
+                    <button
+                      type="button"
+                      onClick={handleLike}
+                      className={`flex items-center gap-2 transition ${
+                        likedByUser
+                          ? "text-red-500"
+                          : "text-[#9ca3af] hover:text-red-400"
+                      }`}
+                    >
+                      ♥ {likes} Likes
+                    </button>
                     <span>{comments.length} Comments</span>
                   </div>
                 </article>
-
+ 
                 {/* Comments */}
                 <section className="mt-8 rounded-xl border border-[#e5e7eb] bg-white p-8">
                   <h2 className="text-lg font-extrabold">
                     Comments ({comments.length})
                   </h2>
-
+ 
                   {/* Add comment */}
                   <div className="mt-6 flex gap-4">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-[#d1d5db]" />
+                    {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.username} className="h-9 w-9 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-9 w-9 shrink-0 rounded-full bg-[#d1d5db]" />
+                      )}
                     <div className="flex flex-1 gap-3">
                       <input
                         type="text"
@@ -226,14 +288,14 @@ function ExpandedPost({ user }) {
                       </button>
                     </div>
                   </div>
-
+ 
                   <div className="mt-8 space-y-8">
                     {comments.length === 0 && (
                       <p className="text-sm text-[#9ca3af]">
                         No comments yet. Be the first!
                       </p>
                     )}
-
+ 
                     {comments.map((comment) => (
                       <Comment
                         key={comment.id}
@@ -246,13 +308,13 @@ function ExpandedPost({ user }) {
                   </div>
                 </section>
               </section>
-
+ 
               {/* Sidebar */}
               <aside className="space-y-8 pt-12">
                 {!post.is_anonymous && post.author && (
                   <section className="rounded-lg bg-[#e6f0ea] p-7">
                     <h3 className="text-lg font-extrabold">About the author</h3>
-
+ 
                     <div className="mt-8 flex items-center gap-4">
                       {post.author.avatar_url ? (
                         <img
@@ -263,7 +325,7 @@ function ExpandedPost({ user }) {
                       ) : (
                         <div className="h-14 w-14 rounded-full bg-[#d1d5db]" />
                       )}
-
+ 
                       <div>
                         <p className="text-sm font-extrabold">{authorName}</p>
                         <p className="text-xs text-[#6b7280]">
@@ -271,17 +333,17 @@ function ExpandedPost({ user }) {
                         </p>
                       </div>
                     </div>
-
+ 
                     {post.author.bio && (
                       <p className="mt-4 text-sm text-[#374151]">{post.author.bio}</p>
                     )}
-
+ 
                     <p className="mt-8 text-center text-sm font-bold">
                       {authorPostCount} Posts
                     </p>
                   </section>
                 )}
-
+ 
                 {post.is_anonymous && (
                   <section className="rounded-lg bg-[#e6f0ea] p-7">
                     <h3 className="text-lg font-extrabold">About the author</h3>
@@ -290,7 +352,7 @@ function ExpandedPost({ user }) {
                     </p>
                   </section>
                 )}
-
+ 
                 <section className="rounded-lg bg-[#e6f0ea] p-7">
                   <h3 className="text-lg font-extrabold">Related Posts</h3>
                   <p className="mt-4 text-sm text-[#6b7280]">Coming soon.</p>
@@ -303,7 +365,7 @@ function ExpandedPost({ user }) {
     </div>
   );
 }
-
+ 
 function Comment({ username, content, time, avatarUrl }) {
   return (
     <article className="border-l-4 border-[#1f2937] pl-5">
@@ -316,10 +378,10 @@ function Comment({ username, content, time, avatarUrl }) {
         <p className="text-sm font-bold">{username}</p>
         <span className="text-xs text-[#9ca3af]">{time}</span>
       </div>
-
+ 
       <p className="mt-2 text-sm leading-6 text-[#374151]">{content}</p>
     </article>
   );
 }
-
+ 
 export default ExpandedPost;

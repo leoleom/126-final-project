@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import AuthLayout from "../components/authLayout";
-import { supabase } from "../services/supabaseClient";
+import { loginUser } from "../utils/apiUtils";
 
 function Login({ setUser }) {
   const navigate = useNavigate();
@@ -15,57 +15,19 @@ function Login({ setUser }) {
     setError("");
     setLoading(true);
 
-    let email = emailOrUsername;
+    const { ok, data } = await loginUser(emailOrUsername, password);
 
-    // determine email or username login
-    if (!emailOrUsername.includes("@up.edu.ph")){
-
-      // gets email via username since supabase only accepts email login
-      const { data: userData, error: lookUpError } = await supabase
-      .from("users")
-      .select("email")
-      .eq("username", emailOrUsername)
-      .single();
-
-      if (lookUpError || !userData) {
-        setError("No account found with that username.");
-        setLoading(false);
-        return;
-      }
-
-      email = userData.email;
-    }
-
-    // sign in with supabase auth
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setError("Invalid email/username or password.");
-      setLoading(false);
-      return;
-    }
-
-    // fetch user data
-    const { data: profile, error: profileError } = await supabase
-      .from("users")
-      .select("id, email, username, avatar_url, role")
-      .eq("id", data.user.id)
-      .single();
-
-    if (profileError || !profile) {
-      setError("Could not load user profile.");
+    if (!ok) {
+      setError(data.error);
       setLoading(false);
       return;
     }
 
     // set user in app state and redirect
     setLoading(false);
-    setUser(profile)
+    setUser(data.user);
     navigate("/feed");
-  }    
+  }
 
   return (
     <AuthLayout>
@@ -137,7 +99,7 @@ function Login({ setUser }) {
           disabled={loading}
           className="h-11 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
         >
-          {loading? "Logging in..." : "Log In"}
+          {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
 

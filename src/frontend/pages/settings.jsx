@@ -1,41 +1,66 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SettingsNavbar from "../components/SettingsNavbar";
+import { updateUserProfile, uploadAvatar } from "../utils/apiUtils";
 
 function Settings({ user, setUser }) {
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState(
-    user?.displayName || user?.username || ""
+    user?.display_name || user?.username || ""
   );
-  const [email, setEmail] = useState(user?.email || "leolem@up.edu.ph");
+  const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(
-    user?.bio || "Ako ay may lobo. Lumipad sa langit."
+    user?.bio || ""
   );
   const [profilePicture, setProfilePicture] = useState(
-    user?.profilePicture || ""
+    user?.avatar_url || ""
   );
 
-  function handleProfilePictureChange(e) {
+  async function handleProfilePictureChange(e) {
     const file = e.target.files[0];
-
     if (!file) return;
 
-    const imageUrl = URL.createObjectURL(file);
-    setProfilePicture(imageUrl);
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePicture(previewUrl);
+
+    const { ok, data } = await uploadAvatar(user.id, file);
+
+    if (!ok) {
+      console.error(data.error);
+      alert("Upload failed.");
+      return;
+    }
+
+    setProfilePicture(data.publicUrl);
   }
 
-  function handleSave() {
-    setUser({
-      ...user,
-      displayName,
-      username: displayName,
-      email,
-      bio,
-      profilePicture,
-    });
+  async function handleSave() {
+    try {
+      const { ok, data } = await updateUserProfile(user.id, {
+        display_name: displayName,
+        bio,
+        avatar_url: profilePicture,
+      });
 
-    alert("Settings saved.");
+      if (!ok) {
+        alert(data.error ?? "Failed to save profile");
+        return;
+      }
+
+      setUser({
+        ...user,
+        display_name: data.display_name,
+        username: data.username,
+        bio: data.bio,
+        avatar_url: data.avatar_url,
+      });
+
+      alert("Settings saved.");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save profile");
+    }
   }
 
   function handleDeleteAccount() {

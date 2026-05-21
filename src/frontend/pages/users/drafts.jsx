@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar";
 import TopBar from "../../components/topBar";
 import PostCard from "../../components/postCard";
-import { supabase } from "../../services/supabaseClient";
+import { getUserDrafts } from "../../utils/apiUtils";
 
 function Drafts({ user }) {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,26 +17,15 @@ function Drafts({ user }) {
 
   async function fetchDrafts() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        created_at,
-        post_tags (tags (name))
-      `)
-      .eq("author_id", user.id)
-      .eq("status", "draft")
-      .order("created_at", { ascending: false });
 
-    if (error) {
+    try {
+      const { data } = await getUserDrafts(user.id);
+      // console.log("draft backend data:", data);
+      setDrafts(data);
+    } catch (error) {
       console.error("Error fetching drafts:", error);
-      setLoading(false);
-      return;
     }
 
-    setDrafts(data);
     setLoading(false);
   }
 
@@ -54,8 +44,16 @@ function Drafts({ user }) {
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-[260px_1fr] bg-white">
-        <Navbar user={user} />
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+        }`}
+      >
+        <Navbar
+          user={user}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <div className="grid grid-rows-[112px_1fr]">
           <TopBar user={user} searchQuery="" setSearchQuery={() => {}} />
@@ -83,6 +81,7 @@ function Drafts({ user }) {
                   key={draft.id}
                   id={draft.id}
                   username={`@${user.username ?? user.display_name}`}
+                  profilePicture={user.avatar_url}
                   time={formatTimeAgo(draft.created_at)}
                   title={draft.title || "Untitled draft"}
                   body={draft.content ?? ""}
@@ -91,7 +90,7 @@ function Drafts({ user }) {
                   views={0}
                   isDraft={true}
                   onLike={() => {}}
-                  onView={() => navigate(`/drafts/${draft.id}/edit`)}
+                  onView={() => navigate(`/posts/${draft.id}/edit`)}
                 />
               ))}
             </div>

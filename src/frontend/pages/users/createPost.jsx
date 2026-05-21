@@ -1,38 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../../services/supabaseClient";
 import "trix/dist/trix.css";
 import "trix";
+import { getTags, savePost, deletePost } from "../../utils/apiUtils";
 
 function CreatePost({ user, existingPost = null }) {
   const navigate = useNavigate();
-  const isDraft = existingPost !== null;
+  const isEditing = existingPost !== null;
+  const isDraft = existingPost?.status === "draft";
 
   const [title, setTitle] = useState(existingPost?.title ?? "");
   const [content, setContent] = useState(existingPost?.content ?? "");
   const [isAnonymous, setIsAnonymous] = useState(existingPost?.is_anonymous ?? false);
-  const [selectedTags, setSelectedTags] = useState(existingPost?.tags ?? []);
+  const [selectedTags, setSelectedTags] = useState(existingPost?.post_tags?.map((pt) => pt.tags.name) ?? []);
 
   const [availableTags, setAvailableTags] = useState([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
 
   useEffect(() => {
     async function fetchTags() {
-      const { data, error } = await supabase
-        .from("tags")
-        .select("name")
-        .order("name", { ascending: true });
-
-      if (error) {
+      try {
+        const { data } = await getTags();
+        setAvailableTags(data.map((t) => t.name));
+      } catch (error) {
         console.error("Error fetching tags:", error);
-        return;
       }
-
-      setAvailableTags(data.map((t) => t.name));
     }
 
     fetchTags();
@@ -59,7 +54,7 @@ function CreatePost({ user, existingPost = null }) {
     const handleAttachmentRemove = (e) => {
       console.log("Attachment removed:", e.attachment);
     };
-    
+
     // Sync trix content into our content state
     const handleChange = () => {
       setContent(input.value);
@@ -105,64 +100,41 @@ function CreatePost({ user, existingPost = null }) {
     return true;
   }
 
-  // ── TAG INSERT HELPER ────────────────────────────────────
-  async function insertPostTags(postId) {
-  const { data: tagRows, error: tagFetchError } = await supabase
-    .from("tags")
-    .select("id, name")
-    .in("name", selectedTags);
-
-  if (tagRows && tagRows.length > 0) {
-    const { error: insertError } = await supabase
-      .from("post_tags")
-      .insert(
-        tagRows.map((tag) => ({ post_id: postId, tag_id: tag.id }))
-      );
-
-  }
-}
-
   // ── PUBLISH ──────────────────────────────────────────────
   async function handlePublish() {
     if (!validate()) return;
+
     setError("");
     setLoading(true);
 
-    if (isDraft) {
-      const { error: updateError } = await supabase
-        .from("posts")
-        .update({
-          title: title.trim(),
-          content: content.trim(),
-          is_anonymous: isAnonymous,
-          status: isAnonymous ? "pending" : "live"
-        })
-        .eq("id", existingPost.id);
+    try {
+      const { ok, data } = await savePost(existingPost?.id ?? null, {
+        author_id: user.id,
+        title,
+        content,
+        is_anonymous: isAnonymous,
+        status:
+          existingPost?.status === "live"
+            ? "live"
+            : isAnonymous
+              ? "pending"
+              : "live",
+        selectedTags,
+      });
 
-      if (updateError) { setError(updateError.message); setLoading(false); return; }
+      if (!ok) {
+        setError(data.error ?? "Failed to publish post");
+        setLoading(false);
+        return;
+      }
 
-      await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
-      if (selectedTags.length > 0) await insertPostTags(existingPost.id);
-
-    } else {
-      const { data: post, error: postError } = await supabase
-        .from("posts")
-        .insert({
-          author_id: user.id,
-          title: title.trim(),
-          content: content.trim(),
-          is_anonymous: isAnonymous,
-          status: isAnonymous ? "pending" : "live"
-        })
-        .select()
-        .single();
-
-      if (postError) { setError(postError.message); setLoading(false); return; }
-      if (selectedTags.length > 0) await insertPostTags(post.id);
+      navigate("/feed");
+    } catch (error) {
+      console.error(error);
+      setError("Failed to publish post");
     }
 
     setLoading(false);
-    navigate("/feed");
   }
 
   // ── SAVE DRAFT ───────────────────────────────────────────
@@ -171,71 +143,63 @@ function CreatePost({ user, existingPost = null }) {
       setError("Write something before saving a draft.");
       return;
     }
+
     setError("");
     setLoading(true);
 
-    if (isDraft) {
-      const { error: updateError } = await supabase
-        .from("posts")
-        .update({
-          title: title.trim(),
-          content: content.trim(),
-          is_anonymous: isAnonymous,
-          status: "draft",
-        })
-        .eq("id", existingPost.id);
+    try {
+      const { ok, data } = await savePost(existingPost?.id ?? null, {
+        author_id: user.id,
+        title,
+        content,
+        is_anonymous: isAnonymous,
+        status: "draft",
+        selectedTags,
+      });
 
-      if (updateError) { setError(updateError.message); setLoading(false); return; }
-
-      await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
-      if (selectedTags.length > 0) await insertPostTags(existingPost.id);
-
-    } else {
-      const { data: post, error: postError } = await supabase
-        .from("posts")
-        .insert({
-          author_id: user.id,
-          title: title.trim(),
-          content: content.trim(),
-          is_anonymous: isAnonymous,
-          status: "draft",
-        })
-        .select()
-        .single();
-
-      if (postError || !post) {
-        setError(postError?.message ?? "Failed to save draft. Please try again.");
+      if (!ok) {
+        setError(data.error ?? "Failed to save draft");
         setLoading(false);
         return;
       }
 
-      if (selectedTags.length > 0) await insertPostTags(post.id);
+      navigate("/drafts");
+    } catch (error) {
+      console.error(error);
+      setError("Failed to save draft");
     }
 
     setLoading(false);
-    navigate("/drafts");
   }
 
   // ── DELETE DRAFT ─────────────────────────────────────────
-  async function handleDeleteDraft() {
+  async function handleDeletePost() {
     setLoading(true);
-    await supabase.from("post_tags").delete().eq("post_id", existingPost.id);
-    const { error: deleteError } = await supabase
-      .from("posts").delete().eq("id", existingPost.id);
+    try {
+      const { ok, data } = await deletePost(existingPost.id);
 
-    if (deleteError) { setError(deleteError.message); setLoading(false); return; }
+      if (!ok) {
+        setError(data.error ?? "Failed to delete draft");
+        setLoading(false);
+        return;
+      }
+
+      navigate(isDraft ? "/drafts" : "/feed");
+    } catch (error) {
+      console.error(error);
+      setError("Failed to delete draft");
+    }
     setLoading(false);
-    navigate("/drafts");
   }
 
   // ── CANCEL ───────────────────────────────────────────────
   function handleCancel() {
     if (!title.trim() && !content.trim()) {
-      navigate(isDraft ? "/drafts" : "/feed");
+      navigate(isEditing ? "/feed" : "/drafts");
       return;
     }
     const leave = window.confirm("Discard changes? Any unsaved edits will be lost.");
-    if (leave) navigate(isDraft ? "/drafts" : "/feed");
+    if (leave) navigate(isEditing ? "/feed" : "/drafts");
   }
 
   return (
@@ -262,25 +226,28 @@ function CreatePost({ user, existingPost = null }) {
           </label>
 
           <div className="flex gap-3">
-            {isDraft && (
+            {isEditing && (
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={loading}
                 className="flex h-11 w-32 items-center justify-center rounded-lg border border-red-200 text-sm font-extrabold text-red-500 hover:bg-red-50 disabled:opacity-50"
               >
-                Delete Draft
+                {isDraft ? "Delete Draft" : "Delete Post"}
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={loading}
-              className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save Draft"}
-            </button>
+            {!isEditing || isDraft ?
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="flex h-11 w-32 items-center justify-center rounded-lg border border-[#e5e7eb] text-sm font-extrabold disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save Draft"}
+              </button>
+            :
+              <></>
+            }
 
             <button
               type="button"
@@ -288,7 +255,7 @@ function CreatePost({ user, existingPost = null }) {
               disabled={loading}
               className="h-11 w-28 rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white disabled:opacity-50"
             >
-              {loading ? "Publishing..." : "Publish"}
+              {loading ? "Publishing..." : isEditing && !isDraft ? "Save Changes" : "Publish"}
             </button>
           </div>
         </header>
@@ -299,11 +266,13 @@ function CreatePost({ user, existingPost = null }) {
         {showDeleteConfirm && (
           <div className="mt-6 flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 px-6 py-4">
             <p className="flex-1 text-sm font-semibold text-red-600">
-              Are you sure you want to delete this draft? This cannot be undone.
+              Are you sure you want to delete this
+              {isDraft ? " draft" : " post"}?
+              This cannot be undone.
             </p>
             <button
               type="button"
-              onClick={handleDeleteDraft}
+              onClick={handleDeletePost}
               disabled={loading}
               className="rounded-lg bg-red-500 px-4 py-2 text-sm font-extrabold text-white disabled:opacity-50"
             >
