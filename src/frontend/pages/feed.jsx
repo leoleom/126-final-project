@@ -4,7 +4,7 @@ import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
 import { getPosts, getTags, toggleVote } from "../utils/apiUtils";
 
-function Feed({user}) {
+function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
   const [searchQuery, setSearchQuery] = useState("");
   const [posts, setPosts] = useState([]);
@@ -40,10 +40,8 @@ function Feed({user}) {
 
   async function fetchPosts() {
     setLoading(true);
-
     try {
       const { ok, data } = await getPosts();
-      console.log(data);
 
       if (!ok) {
         console.error("Error fetching posts:", data);
@@ -63,7 +61,6 @@ function Feed({user}) {
         body: post.content,
         tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
         likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-
         likedByUser:
           post.votes?.some(
             (v) =>
@@ -79,20 +76,6 @@ function Feed({user}) {
     }
 
     setLoading(false);
-  }
-
-  function formatTimeAgo(createdAt) {
-    const now = new Date();
-    const postDate = new Date(createdAt);
-    const seconds = Math.floor((now - postDate) / 1000);
-
-    if (seconds < 60) return "Just now";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
   }
 
   async function handleLike(postId) {
@@ -158,12 +141,25 @@ function Feed({user}) {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
+  function formatTimeAgo(createdAt) {
+    const now = new Date();
+    const postDate = new Date(createdAt);
+    const seconds = Math.floor((now - postDate) / 1000);
+
+    if (seconds < 60) return "Just now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
       <div
-        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
-          sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
-        }`}
+        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
+          }`}
       >
         <Navbar
           user={user}
@@ -190,11 +186,10 @@ function Feed({user}) {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`h-8 rounded-lg px-8 text-sm font-extrabold cursor-pointer shadow-sm ${
-                        activeTab === tab
+                      className={`h-8 rounded-lg px-8 text-sm font-extrabold cursor-pointer shadow-sm ${activeTab === tab
                           ? "bg-[#e6f0ea] text-[#1f2937]"
                           : "border border-[#e5e7eb] bg-white text-[#111827]"
-                      }`}
+                        }`}
                     >
                       {tab}
                     </button>
@@ -207,11 +202,10 @@ function Feed({user}) {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full px-2 py-1 text-xs font-medium cursor-pointer shadow-sm ${
-                        selectedTags.includes(tag)
+                      className={`rounded-full px-2 py-1 text-xs font-medium cursor-pointer shadow-sm ${selectedTags.includes(tag)
                           ? "bg-[#3f6f4f] text-white"
                           : "border border-[#e5e7eb] bg-white text-[#3f6f4f]"
-                      }`}
+                        }`}
                     >
                       # {tag}
                     </button>
@@ -263,7 +257,7 @@ function Feed({user}) {
                       likedByUser={post.likedByUser}
                       views={post.views}
                       onLike={() => handleLike(post.id)}
-                      onView={() => {}}
+                      onView={() => { }}
                       onTagClick={toggleTag}
                     />
                   ))}

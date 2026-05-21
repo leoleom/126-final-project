@@ -2,6 +2,8 @@ require('dotenv').config({
   path: '.env'
 });
 
+// Import the Search Route
+const searchRoutes = require('./routes/search');
 const express = require("express");
 const cors = require("cors");
 
@@ -14,6 +16,10 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Mount the Search Route
+// This connects the '/api/search' URL to the logic in search.js
+app.use('/api/search', searchRoutes);
 
 app.use("/api/posts", postRoutes);
 app.use("/api/users", userRoutes);
