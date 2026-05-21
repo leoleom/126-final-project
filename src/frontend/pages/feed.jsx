@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
 import PostCard from "../components/postCard";
-import { supabase } from "../services/supabaseClient";
+// We don't need the direct supabase import here anymore
 
 function Feed({ user }) {
   const [activeTab, setActiveTab] = useState("Latest");
@@ -15,57 +15,45 @@ function Feed({ user }) {
     "Not Pregnant", "Freedom of Speech",
   ];
 
+  // The Debounce Effect: Watches searchQuery and fetches from backend
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchPosts(searchQuery);
+    }, 500); // Waits 500ms after they stop typing to fetch
 
-  async function fetchPosts() {
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  async function fetchPosts(query = "") {
     setLoading(true);
+    try {
+      // Point to your Express Backend
+      const url = query 
+        ? `http://localhost:5000/api/search?q=${query}` 
+        : `http://localhost:5000/api/search`;
 
-    const { data, error } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        title,
-        content,
-        is_anonymous,
-        status,
-        created_at,
-        author_id,
-        author:users (display_name, username, avatar_url),
-        post_tags (
-          tags (name)
-        ),
-        votes (id, vote_type)
-      `)
-      .eq("status", "live")
-      .order("created_at", { ascending: false });
-    
-    console.log("raw post data:", JSON.stringify(data, null, 2));
-    console.log("error:", error);
-    
-    if (error) {
-      console.error("Error fetching posts:", error);
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const shaped = data.map((post) => ({
+        id: post.id,
+        username: post.is_anonymous
+          ? "Anonymous"
+          : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
+        createdAt: post.created_at,
+        title: post.title,
+        body: post.content,
+        tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
+        likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+        views: 0,
+      }));
+
+      setPosts(shaped);
+    } catch (error) {
+      console.error("Error fetching posts from backend:", error);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Shape data to match what PostCard expects
-    const shaped = data.map((post) => ({
-      id: post.id,
-      username: post.is_anonymous
-        ? "Anonymous"
-        : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
-      createdAt: post.created_at,
-      title: post.title,
-      body: post.content,
-      tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
-      likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-      views: 0, // no views column in ERD yet
-    }));
-
-    setPosts(shaped);
-    setLoading(false);
   }
 
   function formatTimeAgo(createdAt) {
@@ -90,21 +78,12 @@ function Feed({ user }) {
     );
   }
 
-  const filteredPosts = posts
-    .filter((post) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        post.title?.toLowerCase().includes(query) ||
-        post.body?.toLowerCase().includes(query) ||
-        post.username?.toLowerCase().includes(query) ||
-        post.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
-    })
-    .sort((a, b) => {
-      if (activeTab === "Popular") return b.likes - a.likes;
-      if (activeTab === "Trending") return b.views - a.views;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+  // We only sort now, the backend handles the filtering
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (activeTab === "Popular") return b.likes - a.likes;
+    if (activeTab === "Trending") return b.views - a.views;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
 
   return (
     <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
@@ -152,13 +131,14 @@ function Feed({ user }) {
                     </p>
                   )}
 
-                  {!loading && filteredPosts.length === 0 && (
+                  {!loading && sortedPosts.length === 0 && (
                     <p className="text-sm font-semibold text-[#6b7280]">
                       No posts found.
                     </p>
                   )}
 
-                  {filteredPosts.map((post) => (
+                  {/* Note: Changed filteredPosts to sortedPosts here */}
+                  {sortedPosts.map((post) => (
                     <PostCard
                       key={post.id}
                       id={post.id}
