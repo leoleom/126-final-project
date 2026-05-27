@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import SettingsNavbar from "../../components/settingsNavBar";
 import ConfirmDialog from "../../components/confirmDialog";
+import { supabase } from "../../services/supabaseClient";
 
 function ChangePassword({ setUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -23,7 +24,16 @@ function ChangePassword({ setUser }) {
     setShowPasswordConfirm(true);
   }
 
-  function handleChangePassword() {
+  async function handleChangePassword() {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to change password.");
+      return;
+    }
+
     toast.success("Password changed successfully.");
 
     setCurrentPassword("");

@@ -23,7 +23,6 @@ const getUserPosts = async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (error) {console.error(error); return res.status(500).json({ error: error.message });}
-
   res.json(data);
 };
 
@@ -44,22 +43,31 @@ const getUserDrafts = async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (error) {console.error(error); return res.status(500).json({ error: error.message });}
-
   res.json(data);
 };
 
 const getUserProfile = async (req, res) => {
   const { userId } = req.params;
-  const { display_name, bio, avatar_url } = req.body;
 
   const { data, error } = await supabase
     .from("users")
-    .update({ display_name, bio, avatar_url })
+    .select(`
+      id,
+      email,
+      username,
+      display_name,
+      avatar_url,
+      bio,
+      role,
+      private_account,
+      hide_activity
+    `)
     .eq("id", userId)
-    .select()
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {return res.status(500).json({error: error?.message ?? "Failed to update profile",});}
+  if (error) {return res.status(500).json({ error: error.message });}
+  if (!data) {return res.status(404).json({ error: "User not found." });}
+
   res.json(data);
 };
 
@@ -76,8 +84,7 @@ const uploadAvatar = async (req, res) => {
     .from("avatars")
     .upload(fileName, file.buffer, {contentType: file.mimetype, upsert: true,});
 
-  if (uploadError) {
-    console.error(uploadError);
+  if (uploadError) { console.error(uploadError);
     return res.status(500).json({ error: "Upload failed." });
   }
 
@@ -103,30 +110,19 @@ const getUserBookmarks = async (req, res) => {
         author_id,
         is_anonymous,
         status,
-        author:users (
-          username,
-          display_name,
-          avatar_url
-        ),
-        post_tags (
-          tags (name)
-        ),
-        votes (
-          id,
-          author_id
-        )
+        author:users (username, display_name, avatar_url),
+        post_tags (tags (name)),
+        votes (id,author_id)
       )
     `)
     .eq("user_id", userId);
 
   if (error) {return res.status(500).json({error: error.message,});}
-
   res.json(data ?? []);
 };
 
 const getUserNotifications = async (req, res) => {
   const { userId } = req.params;
-
   const { data, error } = await supabase
     .from("notifications")
     .select("*")
@@ -134,13 +130,11 @@ const getUserNotifications = async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (error) {return res.status(500).json({error: error.message,});}
-
   return res.status(200).json(data || []);
 };
 
 const markNotificationsAsRead = async (req, res) => {
   const { userId } = req.params;
-
   const { error } = await supabase
     .from("notifications")
     .update({ is_read: true })
@@ -148,14 +142,51 @@ const markNotificationsAsRead = async (req, res) => {
     .eq("is_read", false);
 
   if (error) {return res.status(500).json({error: "Failed to mark notifications as read.",});}
-
   res.json({message: "Notifications marked as read.",});
+};
+
+const updateUserProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  const {
+    display_name,
+    bio,
+    avatar_url,
+    private_account,
+    hide_activity,
+  } = req.body;
+
+  const updates = {};
+
+  if (display_name !== undefined) updates.display_name = display_name;
+  if (bio !== undefined) updates.bio = bio;
+  if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+  if (private_account !== undefined) updates.private_account = private_account;
+  if (hide_activity !== undefined) updates.hide_activity = hide_activity;
+
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId)
+    .select()
+    .maybesingle();
+
+  if (error || !data) {
+    return res.status(500).json({error: error?.message ?? "Failed to update profile",});
+  }
+  
+  if (!data) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  return res.json(data);
 };
 
 module.exports = {
   getUserPosts,
   getUserDrafts,
   getUserProfile,
+  updateUserProfile,
   getUserBookmarks,
   getUserNotifications,
   markNotificationsAsRead,

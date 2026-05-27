@@ -156,11 +156,7 @@ function RoleBadge({ role }) {
 function StatusBadge({ status }) {
   const value = status || "active";
 
-  return (
-    <span className="whitespace-nowrap rounded-full bg-[#dff1e3] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#2f6b43]">
-      {value}
-    </span>
-  );
+  return (<span className="whitespace-nowrap rounded-full bg-[#dff1e3] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-[#2f6b43]">{value}</span>);
 }
 
 export default AdminUsers;

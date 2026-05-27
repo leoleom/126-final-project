@@ -1,13 +1,28 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { supabase } from "../services/supabaseClient";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleResetLink() {
+  async function handleResetLink() {
     if (!email.trim()) {
       toast.error("Please enter your email.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/settings/change-password`,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message || "Failed to send reset link.");
       return;
     }
 
@@ -24,7 +39,6 @@ function ForgotPassword() {
               alt="Campus trees"
               className="h-full w-full object-cover"
             />
-
             <div className="absolute inset-0 bg-[#1f3d2b]/35" />
           </section>
 
@@ -67,9 +81,10 @@ function ForgotPassword() {
                 <button
                   type="button"
                   onClick={handleResetLink}
-                  className="mt-7 h-12 w-full rounded-xl bg-[#3F6F4F] text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(32,58,42,0.16)] transition hover:bg-[#335C41]"
+                  disabled={loading}
+                  className="mt-7 h-12 w-full rounded-xl bg-[#3F6F4F] text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(32,58,42,0.16)] transition hover:bg-[#335C41] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Send reset link
+                  {loading ? "Sending..." : "Send reset link"}
                 </button>
               </div>
 

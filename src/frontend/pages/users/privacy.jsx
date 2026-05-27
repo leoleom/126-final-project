@@ -1,10 +1,42 @@
 import { useState } from "react";
 import SettingsNavbar from "../../components/settingsNavBar";
+import toast from "react-hot-toast";
+import { updateUserProfile } from "../../utils/apiUtils";
 
-function Privacy({ setUser }) {
+function Privacy({ user, setUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [privateAccount, setPrivateAccount] = useState(false);
-  const [hideActivity, setHideActivity] = useState(false);
+  const [privateAccount, setPrivateAccount] = useState(user?.private_account ?? false);
+  const [hideActivity, setHideActivity] = useState(user?.hide_activity ?? false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSavePrivacy(nextPrivateAccount, nextHideActivity) {
+    if (!user?.id) {
+      toast.error("User not found.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { ok, data } = await updateUserProfile(user.id, {
+      private_account: nextPrivateAccount,
+      hide_activity: nextHideActivity,
+    });
+
+    setSaving(false);
+
+    if (!ok) {
+      toast.error(data?.error || "Failed to save privacy settings.");
+      return;
+    }
+
+    setUser?.({
+      ...user,
+      private_account: data.private_account,
+      hide_activity: data.hide_activity,
+    });
+
+    toast.success("Privacy settings saved.");
+  }
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#d7dfd8_0%,#cfd8d1_45%,#dbe3dc_100%)] text-[#1f2937]">
@@ -42,14 +74,22 @@ function Privacy({ setUser }) {
                 title="Private Account"
                 description="Limit access to your profile and posts."
                 checked={privateAccount}
-                onChange={setPrivateAccount}
+                disabled={saving}
+                onChange={(value) => {
+                  setPrivateAccount(value);
+                  handleSavePrivacy(value, hideActivity);
+                }}
               />
 
               <PrivacyToggle
                 title="Hide Profile Activity"
                 description="Keep your likes, bookmarks, and activity less visible."
                 checked={hideActivity}
-                onChange={setHideActivity}
+                disabled={saving}
+                onChange={(value) => {
+                  setHideActivity(value);
+                  handleSavePrivacy(privateAccount, value);
+                }}
               />
             </section>
           </div>
@@ -59,7 +99,7 @@ function Privacy({ setUser }) {
   );
 }
 
-function PrivacyToggle({ title, description, checked, onChange }) {
+function PrivacyToggle({ title, description, checked, onChange, disabled }) {
   return (
     <label className="flex cursor-pointer items-center justify-between gap-6 rounded-[1.5rem] border border-[#d4ddd6] bg-[#f4f7f4] px-6 py-5 shadow-sm transition hover:bg-white">
       <div>
@@ -70,6 +110,7 @@ function PrivacyToggle({ title, description, checked, onChange }) {
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
         className="h-5 w-5 accent-[#3F6F4F]"
       />

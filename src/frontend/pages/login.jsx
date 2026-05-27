@@ -3,6 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import AuthLayout from "../components/authLayout";
 import { loginUser } from "../utils/apiUtils";
+import { supabase } from "../services/supabaseClient";
 
 function Login({ setUser }) {
   const navigate = useNavigate();
@@ -13,21 +14,46 @@ function Login({ setUser }) {
 
   async function handleLogin(e) {
     e.preventDefault();
-
     setLoading(true);
 
-    const { ok, data } = await loginUser(emailOrUsername, password);
+    try {
+      const { ok, data } = await loginUser(emailOrUsername, password);
 
-    if (!ok) {
-      toast.error(data.error || "Login failed.");
+      if (!ok) {
+        toast.error(data.error || "Login failed.");
+        setLoading(false);
+        return;
+      }
+
+      const email = data.user?.email;
+
+      if (!email) {
+        toast.error("Login failed. User email not found.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: supabaseError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (supabaseError) {
+        toast.error(supabaseError.message || "Supabase session failed.");
+        setLoading(false);
+        return;
+      }
+
+      setUser(data.user);
+      toast.success("Logged in successfully.");
+      navigate("/feed");
+    } catch (error) {
+      console.error(error);
+      toast.error("Login failed.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    toast.success("Logged in successfully.");
-    setLoading(false);
-    setUser(data.user);
-    navigate("/feed");
   }
 
   return (

@@ -18,19 +18,13 @@ function Feed({ user }) {
   const [reportPostId, setReportPostId] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
 
-  useEffect(() => {
-    fetchPosts();
-    loadTags();
-  }, []);
+  useEffect(() => {fetchPosts(); loadTags();}, []);
 
   async function loadTags() {
     try {
       const { ok, data } = await getTags();
 
-      if (!ok) {
-        toast.error("Unable to load tags.");
-        return;
-      }
+      if (!ok) {toast.error("Unable to load tags."); return;}
 
       const tagNames = (data || []).map((tag) =>
         typeof tag === "string" ? tag : tag.name
@@ -70,9 +64,7 @@ function Feed({ user }) {
         tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
         likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
         likedByUser:
-          post.votes?.some(
-            (v) => v.vote_type === "upvote" && v.author_id === user?.id
-          ) ?? false,
+          post.votes?.some((v) => v.vote_type === "upvote" && v.author_id === user?.id) ?? false,
         bookmarkedByUser: bookmarkedPostIds.has(post.id),
         views: post.views ?? 0,
         comments: post.comments?.length ?? 0,
@@ -92,37 +84,24 @@ function Feed({ user }) {
 
     const { ok, data } = await getUserBookmarks(user.id);
 
-    if (!ok) {
-      console.error("Error fetching bookmarks:", data);
-      return new Set();
-    }
+    if (!ok) {console.error("Error fetching bookmarks:", data);
+      return new Set();}
 
     return new Set((data || []).map((bookmark) => bookmark.post?.id));
   }
 
   async function handleLike(postId) {
-    if (!user) {
-      toast.error("Please log in to like posts.");
-      return;
-    }
+    if (!user) {toast.error("Please log in to like posts."); return;}
 
     try {
       const { ok, data } = await toggleVote(postId, user.id);
 
-      if (!ok) {
-        toast.error(data.error || "Unable to update reaction.");
-        return;
-      }
+      if (!ok) {toast.error(data.error || "Unable to update reaction."); return;}
 
       setPosts((prev) =>
         prev.map((post) => {
           if (post.id !== postId) return post;
-
-          return {
-            ...post,
-            likedByUser: data.liked,
-            likes: data.liked ? post.likes + 1 : Math.max(post.likes - 1, 0),
-          };
+          return {...post, likedByUser: data.liked, likes: data.liked ? post.likes + 1 : Math.max(post.likes - 1, 0),};
         })
       );
     } catch (error) {
@@ -132,11 +111,7 @@ function Feed({ user }) {
   }
 
   async function handleBookmark(postId) {
-    if (!user) {
-      toast.error("Please log in to bookmark posts.");
-      return;
-    }
-
+    if (!user) {toast.error("Please log in to bookmark posts."); return;}
     if (bookmarkingPostId === postId) return;
 
     setBookmarkingPostId(postId);
@@ -144,10 +119,7 @@ function Feed({ user }) {
     try {
       const { ok, data } = await toggleBookmark(postId, user.id);
 
-      if (!ok) {
-        toast.error(data.error || "Bookmark action failed.");
-        return;
-      }
+      if (!ok) {toast.error(data.error || "Bookmark action failed."); return;}
 
       setPosts((prev) =>
         prev.map((post) =>
