@@ -50,7 +50,7 @@ function Profile({ user }) {
     setLoading(true);
     try {
       const { data } = await getUserPosts(targetId);
-      const shaped = (data || []).map((post) => ({
+      const shaped = (data || []).filter((post) => !post.is_anonymous).map((post) => ({
         id: post.id,
         title: post.title,
         body: post.content,
