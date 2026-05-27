@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node src/backend/app.js",
+    "fullstack": "concurrently \"npm run dev\" \"npm run server\""
   },
   "repository": {
     "type": "git",
@@ -40,6 +42,7 @@
     "@tailwindcss/vite": "^4.2.4",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.2.4",
     "vite": "^8.0.11"
