@@ -22,9 +22,7 @@ export async function getComments(postId) {
 export async function createComment(postId, authorId, content) {
   const response = await fetch(`${BASE_URL}/posts/${postId}/comments`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: {"Content-Type": "application/json",},
     body: JSON.stringify({
       author_id: authorId,
       content: content,
@@ -32,6 +30,17 @@ export async function createComment(postId, authorId, content) {
   });
   const data = await response.json();
   return { ok: response.ok, data };
+}
+
+export async function incrementPostView(postId) {
+  const response = await fetch(`${BASE_URL}/posts/${postId}/view`, {
+    method: "PATCH",
+  });
+
+  const data = await response.json();
+  return { ok: response.ok, data };
+
+  
 }
 
 
@@ -45,9 +54,7 @@ export async function getUserPosts(userId) {
 export async function updateUserProfile(userId, { display_name, bio, avatar_url }) {
   const response = await fetch(`${BASE_URL}/users/${userId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: {"Content-Type": "application/json",},
     body: JSON.stringify({ display_name, bio, avatar_url }),
   });
   const data = await response.json();
@@ -69,9 +76,7 @@ export async function uploadAvatar(userId, file) {
 export async function signupUser(email, username, password) {
   const response = await fetch(`${BASE_URL}/auth/signup`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: {"Content-Type": "application/json",},
     body: JSON.stringify({ email, username, password }),
   });
   const data = await response.json();
@@ -99,10 +104,21 @@ export async function savePost(postId = null, payload) {
  
 export async function deletePost(postId) {
   const response = await fetch(`${BASE_URL}/posts/${postId}`, {
-    method: "DELETE",
-  });
+    method: "DELETE",});
   const data = await response.json();
   return { ok: response.ok, data };
+}
+
+export async function deleteDraft(draftId) {
+  try {
+    const response = await fetch(`${BASE_URL}/posts/${draftId}`, {method: "DELETE",});
+
+    const data = await response.json();
+
+    return {ok: response.ok, data,};
+  } catch (error) {
+    return {ok: false,data: { error: error.message },};
+  }
 }
 
 export async function getUserDrafts(userId) {
@@ -110,6 +126,50 @@ export async function getUserDrafts(userId) {
   const data = await response.json();
   return { ok: response.ok, data };
 }
+
+export async function getUserBookmarks(userId) {
+  const response = await fetch(`${BASE_URL}/users/${userId}/bookmarks`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function toggleBookmark(postId, userId) {
+  const response = await fetch(`${BASE_URL}/posts/${postId}/bookmark`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json",},
+    body: JSON.stringify({user_id: userId,}),
+  });
+
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function reportPost(postId, userId) {
+  const response = await fetch(`${BASE_URL}/posts/${postId}/report`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json",},
+    body: JSON.stringify({user_id: userId,}),
+  });
+
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
+export async function getUserNotifications(userId) {
+  const response = await fetch(`${BASE_URL}/users/${userId}/notifications`);
+  const data = await response.json();
+  return {ok: response.ok, data,};
+}
+
+export async function markNotificationsAsRead(userId) {
+  const response = await fetch(
+    `${BASE_URL}/users/${userId}/notifications/read`,
+    {method: "PATCH",});
+
+  const data = await response.json();
+  return {ok: response.ok, data,};
+}
+
 
 
 /* ADMIN */
@@ -133,24 +193,21 @@ export async function getReportedPosts() {
  
 export async function resolveReportKeepPost(reportId) {
   const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/keep`, {
-    method: "PATCH",
-  });
+    method: "PATCH",});
   const data = await response.json();
   return { ok: response.ok, data };
 }
  
 export async function resolveReportHidePost(reportId, postId) {
   const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/hide/${postId}`, {
-    method: "PATCH",
-  });
+    method: "PATCH",});
   const data = await response.json();
   return { ok: response.ok, data };
 }
  
 export async function resolveReportDeletePost(reportId, postId) {
   const response = await fetch(`${BASE_URL}/admin/reports/${reportId}/delete/${postId}`, {
-    method: "PATCH",
-  });
+    method: "PATCH",});
   const data = await response.json();
   return { ok: response.ok, data };
 }
@@ -164,8 +221,7 @@ export async function getPendingAnonymousPosts() {
 export async function approveAnonymousPost(postId) {
   try{
     const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/approve`, {
-      method: "PATCH",
-    });
+      method: "PATCH",});
     const data = await response.json();
     return { ok: response.ok, data };
   } catch (error) {
@@ -176,8 +232,7 @@ export async function approveAnonymousPost(postId) {
 export async function rejectAnonymousPost(postId) {
   try{
     const response = await fetch(`${BASE_URL}/admin/anonymous/${postId}/reject`, {
-      method: "PATCH",
-    });
+      method: "PATCH",});
     const data = await response.json();
     return { ok: response.ok, data };
   } catch (error) {
@@ -190,9 +245,7 @@ export async function rejectAnonymousPost(postId) {
 export async function loginUser(emailOrUsername, password) {
   const response = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: {"Content-Type": "application/json",},
     body: JSON.stringify({ emailOrUsername, password }),
   });
   const data = await response.json();
@@ -212,18 +265,10 @@ export async function logoutUser() {
 export async function toggleVote(postId, authorId) {
   const response = await fetch(`${BASE_URL}/posts/${postId}/vote`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      author_id: authorId,
-    }),
+    headers: {"Content-Type": "application/json",},
+    body: JSON.stringify({author_id: authorId,}),
   });
 
   const data = await response.json();
-
-  return {
-    ok: response.ok,
-    data,
-  };
+  return {ok: response.ok,data,};
 }

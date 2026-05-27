@@ -11,15 +11,11 @@ const getPosts = async (req, res) => {
       status,
       created_at,
       author_id,
-      author:users (
-        display_name,
-        username,
-        avatar_url
-      ),
-      post_tags (
-        tags (name)
-      ),
-      votes (id, vote_type, author_id)
+      views,
+      author:users (display_name, username, avatar_url),
+      post_tags (tags (name)),
+      votes (id, vote_type, author_id),
+      comments (id)
     `)
     .eq("status", "live")
     .order("created_at", {
@@ -41,11 +37,7 @@ const getTags = async (req, res) => {
       ascending: true,
     });
 
-  if (error) {
-    return res.status(500).json({
-      error: error.message,
-    });
-  }
+  if (error) {return res.status(500).json({error: error.message,});}
 
   res.json(data ?? []);
 }
@@ -61,9 +53,7 @@ const createPost = async (req, res) => {
   } = req.body;
 
   if (!author_id || !title?.trim()) {
-    return res.status(400).json({
-      error: "Missing required fields",
-    });
+    return res.status(400).json({error: "Missing required fields",});
   }
 
   const { data: post, error: postError } =
@@ -80,11 +70,7 @@ const createPost = async (req, res) => {
       .single();
 
   if (postError || !post) {
-    return res.status(500).json({
-      error:
-        postError?.message ??
-        "Failed to create post",
-    });
+    return res.status(500).json({error: postError?.message ?? "Failed to create post",});
   }
 
   if (
@@ -145,9 +131,7 @@ const deletePost = async (req, res) => {
     });
   }
 
-  res.json({
-    success: true,
-  });
+  res.json({success: true,});
 };
 
 const updatePost = async (req, res) => {
@@ -214,6 +198,7 @@ const getPost = async (req, res) => {
       is_anonymous,
       created_at,
       author_id,
+      views,
       author:users (
         id,
         username,
@@ -248,7 +233,7 @@ const getPost = async (req, res) => {
     post: data,
     authorPostCount: count ?? 0,
   });
-}
+};
 
 const getComments = async (req, res) => {
   const { postId } = req.params;
@@ -370,6 +355,109 @@ const toggleVote = async (req, res) => {
   });
 };
 
+const toggleBookmark = async (req, res) => {
+  const { postId } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
+
+  const { data: existingBookmark, error: findError } = await supabase
+    .from("bookmarks")
+    .select("id")
+    .eq("user_id", user_id)
+    .eq("post_id", postId)
+    .maybeSingle();
+
+  if (findError) {
+    return res.status(500).json({ error: findError.message });
+  }
+
+  if (existingBookmark) {
+    const { error: deleteError } = await supabase
+      .from("bookmarks")
+      .delete()
+      .eq("id", existingBookmark.id);
+
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    return res.status(200).json({ bookmarked: false });
+  }
+
+  const { error: insertError } = await supabase
+    .from("bookmarks")
+    .insert({
+      user_id,
+      post_id: postId,
+    });
+
+  if (insertError) {
+    return res.status(500).json({ error: insertError.message });
+  }
+
+  return res.status(200).json({ bookmarked: true });
+};
+
+const incrementPostView = async (req, res) => {
+  const { postId } = req.params;
+
+  const { data: post, error: fetchError } = await supabase
+    .from("posts")
+    .select("views")
+    .eq("id", postId)
+    .single();
+
+  if (fetchError || !post) {
+    return res.status(404).json({ error: "Post not found." });
+  }
+
+  const currentViews = post.views || 0;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .update({ views: currentViews + 1 })
+    .eq("id", postId)
+    .select("id, views")
+    .single();
+
+  if (error) {return res.status(500).json({ error: error.message });}
+
+  return res.json({message: "View counted.", views: data.views,});
+};
+
+const reportPost = async (req, res) => {
+  const { postId } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {return res.status(400).json({error: "user_id is required",});}
+
+  const { data: existingReport, error: checkError } = await supabase
+    .from("flags")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("reported_by", user_id)
+    .maybeSingle();
+
+  if (checkError) {return res.status(500).json({error: checkError.message,});}
+
+  if (existingReport) {return res.status(400).json({error: "You already reported this post.",});}
+
+  const { error } = await supabase
+    .from("flags")
+    .insert({
+      post_id: postId,
+      reported_by: user_id,
+      status: "pending",
+    });
+
+  if (error) {return res.status(500).json({error: error.message,});}
+
+  return res.status(201).json({message: "Post reported successfully.",});
+};
+
 module.exports = {
   getPosts,
   getTags,
@@ -382,5 +470,8 @@ module.exports = {
   getComments,
   createComment,
 
-  toggleVote
+  toggleVote,
+  toggleBookmark,
+  incrementPostView,
+  reportPost,
 };

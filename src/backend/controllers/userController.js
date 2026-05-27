@@ -22,10 +22,7 @@ const getUserPosts = async (req, res) => {
     .in("status", ["live", "pending"])
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message });
-  }
+  if (error) {console.error(error); return res.status(500).json({ error: error.message });}
 
   res.json(data);
 };
@@ -46,10 +43,7 @@ const getUserDrafts = async (req, res) => {
     .eq("status", "draft")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message });
-  }
+  if (error) {console.error(error); return res.status(500).json({ error: error.message });}
 
   res.json(data);
 };
@@ -65,12 +59,7 @@ const getUserProfile = async (req, res) => {
     .select()
     .single();
 
-  if (error || !data) {
-    return res.status(500).json({
-      error: error?.message ?? "Failed to update profile",
-    });
-  }
-
+  if (error || !data) {return res.status(500).json({error: error?.message ?? "Failed to update profile",});}
   res.json(data);
 };
 
@@ -78,19 +67,14 @@ const uploadAvatar = async (req, res) => {
   const { userId } = req.params;
   const file = req.file;
 
-  if (!file) {
-    return res.status(400).json({ error: "No file provided." });
-  }
+  if (!file) {return res.status(400).json({ error: "No file provided." });}
 
   const fileExt = file.originalname.split(".").pop();
   const fileName = `${userId}-${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(fileName, file.buffer, {
-      contentType: file.mimetype,
-      upsert: true,
-    });
+    .upload(fileName, file.buffer, {contentType: file.mimetype, upsert: true,});
 
   if (uploadError) {
     console.error(uploadError);
@@ -104,10 +88,76 @@ const uploadAvatar = async (req, res) => {
   return res.status(200).json({ publicUrl: data.publicUrl });
 };
 
+const getUserBookmarks = async (req, res) => {
+  const { userId } = req.params;
+
+  const { data, error } = await supabase
+    .from("bookmarks")
+    .select(`
+      id,
+      post:posts (
+        id,
+        title,
+        content,
+        created_at,
+        author_id,
+        is_anonymous,
+        status,
+        author:users (
+          username,
+          display_name,
+          avatar_url
+        ),
+        post_tags (
+          tags (name)
+        ),
+        votes (
+          id,
+          author_id
+        )
+      )
+    `)
+    .eq("user_id", userId);
+
+  if (error) {return res.status(500).json({error: error.message,});}
+
+  res.json(data ?? []);
+};
+
+const getUserNotifications = async (req, res) => {
+  const { userId } = req.params;
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {return res.status(500).json({error: error.message,});}
+
+  return res.status(200).json(data || []);
+};
+
+const markNotificationsAsRead = async (req, res) => {
+  const { userId } = req.params;
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("user_id", userId)
+    .eq("is_read", false);
+
+  if (error) {return res.status(500).json({error: "Failed to mark notifications as read.",});}
+
+  res.json({message: "Notifications marked as read.",});
+};
 
 module.exports = {
   getUserPosts,
   getUserDrafts,
   getUserProfile,
+  getUserBookmarks,
+  getUserNotifications,
+  markNotificationsAsRead,
   uploadAvatar, upload
 };

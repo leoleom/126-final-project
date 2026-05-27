@@ -9,132 +9,182 @@ function PostCard({
   time,
   title,
   body,
-  tags,
-  likes,
+  tags = [],
+  likes = 0,
   likedByUser,
-  views,
+  bookmarkedByUser,
+  views = 0,
   onLike,
+  onBookmark,
+  onRequestReport,
+  onReport,
   onView,
+  onDelete,
   isDraft = false,
+  showViews = true,
+  showLikes = true,
+  showComments = true,
   authorId,
-  user
+  user,
+  comments = 0,
 }) {
-  // Controls the visibility of the Edit/Report dropdown menu
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
 
   return (
-    <article className="relative rounded-xl border border-[#e5e7eb] bg-white p-7 shadow-sm">
-      
-      {/* Post header: user info + action menu */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+    <article className="relative rounded-[1.25rem] border border-[#d4ddd6] bg-[#f8fbf8]/95 px-6 py-5 shadow-sm transition hover:shadow-[0_12px_28px_rgba(63,111,79,0.08)]">
+      <div className="flex items-start justify-between gap-5">
+        <div className="flex items-center gap-3">
           {profilePicture ? (
-            <img src={profilePicture} alt={username} className="h-11 w-11 rounded-full object-cover" />
-          ) : ( 
-            <div className="h-11 w-11 rounded-full bg-[#d1d5db]" />
+            <img
+              src={profilePicture}
+              alt={username}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-[#d1d5db]" />
           )}
 
-          {/* Username and timestamp */}
           <div>
             <p className="text-sm font-extrabold text-[#111827]">
               {username}
             </p>
 
-            <p className="mt-1 text-xs font-semibold text-[#9ca3af]">
+            <p className="mt-0.5 text-xs font-semibold text-[#9ca3af]">
               {time}
             </p>
           </div>
         </div>
 
-        {/* Post action dropdown */}
         <div className="relative">
           <button
             type="button"
             onClick={() => setShowMenu(!showMenu)}
-            className="text-xl font-bold text-[#6b7280]"
+            className="rounded-lg px-2 text-xl font-bold text-[#6b7280] transition hover:bg-[#f3f7f4] hover:text-[#3F6F4F]"
           >
             ⋯
           </button>
 
-          {/* Dropdown menu appears when toggled */}
           {showMenu && (
-            <div className="absolute right-0 top-8 w-36 rounded-lg border border-[#e5e7eb] bg-white shadow-sm">
+            <div className="absolute right-0 top-8 z-20 w-36 overflow-hidden rounded-xl border border-[#d4ddd6] bg-white shadow-[0_12px_28px_rgba(63,111,79,0.12)]">
               {user?.id === authorId ? (
-                <button
-                  onClick={() => navigate(`/posts/${id}/edit`)}
-                  className="block w-full px-4 py-3 text-left text-sm hover:bg-[#f3f4f6]"
-                >
-                  Edit Post
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(`/posts/${id}/edit`);
+                      setShowMenu(false);
+                    }}
+                    className="block w-full px-4 py-3 text-left text-sm font-semibold text-[#26322B] hover:bg-[#f3f7f4]"
+                  >
+                    Edit Post
+                  </button>
+
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onDelete();
+                        setShowMenu(false);
+                      }}
+                      className="block w-full px-4 py-3 text-left text-sm font-semibold text-red-500 hover:bg-red-50"
+                    >
+                      Delete Draft
+                    </button>
+                  )}
+                </>
               ) : (
-                <button className="block w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-[#f3f4f6]">
-                  Report
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRequestReport?.(id);
+                  setShowMenu(false);
+                }}
+                className="block w-full px-4 py-3 text-left text-sm font-semibold text-red-500 hover:bg-red-50"
+              >
+                Report
+              </button>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Draft posts stay local and do not route to expanded post */}
       {isDraft ? (
         <div onClick={onView} className="cursor-pointer">
-          <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+          <h3 className="mt-5 text-xl font-extrabold text-[#1f2937] transition hover:text-[#3f6f4f]">
             {title}
           </h3>
 
           <div
-            className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+            className="mt-3 max-w-[680px] text-sm leading-6 text-[#374151] line-clamp-3"
             dangerouslySetInnerHTML={{ __html: body }}
           />
         </div>
       ) : (
-        /* Published posts route to expanded post page */
-        <Link to={`/post/${id}`} onClick={onView}>
-          <h3 className="mt-7 text-2xl font-extrabold text-[#1f2937] hover:text-[#3f6f4f]">
+        <Link to={`/post/${id}`} className="block">
+          <h3 className="mt-5 text-xl font-extrabold text-[#1f2937] transition hover:text-[#3f6f4f]">
             {title}
           </h3>
 
           <div
-            className="mt-4 max-w-[620px] text-sm leading-6 text-[#374151] line-clamp-3"
+            className="mt-3 max-w-[680px] text-sm leading-6 text-[#374151] line-clamp-3"
             dangerouslySetInnerHTML={{ __html: body }}
           />
         </Link>
       )}
 
-      {/* Post tags */}
-      <div className="mt-7 flex flex-wrap gap-4">
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full bg-[#e6f0ea] px-5 py-1.5 text-xs font-extrabold text-[#3f6f4f]"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {tags.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#e6f0ea] px-4 py-1 text-xs font-extrabold text-[#3f6f4f]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
-      {/* Post engagement metrics */}
-      <div className="mt-6 flex gap-12 text-sm font-bold text-[#9ca3af]">
-        
-        {/* Like button */}
+      <div className={`mt-5 flex text-sm font-bold text-[#9ca3af] ${
+          !showLikes && !showViews && !showComments
+            ? "justify-end"
+            : "items-center justify-between"
+        }`}
+      >
+        {(showLikes || showViews || showComments) && (
+          <div className="flex items-center gap-8">
+            {showLikes && (
+              <button
+                type="button"
+                onClick={onLike}
+                className={`flex items-center gap-2 transition hover:text-red-500 ${
+                  likedByUser ? "text-red-500" : "text-[#6b7280]"
+                }`}
+              >
+                ♥ {likes} likes
+              </button>
+            )}
+
+            {showViews && <span>{views} views</span>}
+
+            {showComments && <span>{comments} comments</span>}
+          </div>
+        )}
+
         <button
           type="button"
-          onClick={onLike}
-          className={`flex items-center gap-2 ${
-            likedByUser
-              ? "text-red-500"
-              : "text-[#6b7280]"
+          onClick={onBookmark}
+          className={`transition hover:text-[#3f6f4f] ${
+            bookmarkedByUser ? "text-[#3f6f4f]" : "text-[#9ca3af]"
           }`}
         >
-          ♥ {likes} likes
+          <Bookmark
+            size={19}
+            fill={bookmarkedByUser ? "currentColor" : "none"}
+          />
         </button>
-
-        {/* View counter */}
-        <span>{views} views</span>
-
-        <span><Bookmark size={20} /></span>
       </div>
     </article>
   );
