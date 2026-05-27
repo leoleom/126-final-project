@@ -102,22 +102,16 @@ const createPost = async (req, res) => {
 const deletePost = async (req, res) => {
   const { postId } = req.params;
 
-  console.log("Deleting post:", postId);
-
   const tagDelete = await supabase
     .from("post_tags")
     .delete()
     .eq("post_id", postId);
-
-  console.log("Tag delete:", tagDelete);
 
   const postDelete = await supabase
     .from("posts")
     .delete()
     .eq("id", postId)
     .select();
-
-  console.log("Post delete:", postDelete);
 
   if (postDelete.error) {
     return res.status(500).json({

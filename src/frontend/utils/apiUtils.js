@@ -39,6 +39,12 @@ export async function incrementPostView(postId) {
 
 
 /* USERS */
+export async function getUserById(userId) {
+  const response = await fetch(`${BASE_URL}/users/${userId}`);
+  const data = await response.json();
+  return { ok: response.ok, data };
+}
+
 export async function getUserPosts(userId) {
   const response = await fetch(`${BASE_URL}/users/${userId}/posts`);
   const data = await response.json();
