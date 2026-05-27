@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import AuthLayout from "../components/authLayout";
 import { signupUser } from "../utils/apiUtils";
 
@@ -10,29 +11,28 @@ function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSignup() {
-    setError("");
+  async function handleSignup(e) {
+    e.preventDefault();
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      toast.error("Password must be at least 8 characters.");
       return;
     }
 
     if (!/\d/.test(password)) {
-      setError("Password must contain at least one number.");
+      toast.error("Password must contain at least one number.");
       return;
     }
 
     if (!email.endsWith("@up.edu.ph")) {
-      setError("Only @up.edu.ph email addresses are allowed.");
+      toast.error("Only @up.edu.ph email addresses are allowed.");
       return;
     }
 
@@ -41,11 +41,12 @@ function Signup() {
     const { ok, data } = await signupUser(email, username, password);
 
     if (!ok) {
-      setError(data.error);
+      toast.error(data.error || "Signup failed.");
       setLoading(false);
       return;
     }
 
+    toast.success("Account created successfully.");
     setLoading(false);
     navigate("/feed");
   }
@@ -54,68 +55,62 @@ function Signup() {
     <AuthLayout>
       <Link
         to="/"
-        className="mb-10 inline-flex items-center gap-2 text-sm font-semibold text-[#6b7280]"
+        className="mb-7 inline-flex rounded-full border border-[#cfd8d1] bg-[#edf2ee] px-4 py-2 text-sm font-semibold text-[#4F5C55] shadow-sm transition hover:border-[#3F6F4F] hover:text-[#3F6F4F]"
       >
-        ← Back
+        Back
       </Link>
 
-      <h1 className="text-3xl font-extrabold text-[#3f6f4f]">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#3F6F4F]">
+        Sign up
+      </p>
+
+      <h1 className="mt-3 text-4xl font-bold tracking-tight text-[#26322B]">
         Create an account
       </h1>
 
-      <p className="mt-3 text-sm text-[#6b7280]">
-        Join the community.
+      <p className="mt-3 text-sm leading-6 text-[#5F6B63]">
+        Join the community and start sharing respectfully.
       </p>
 
-      {error && (
-        <p className="mt-3 text-sm text-red-500">{error}</p>
-      )}
-
-      <form className="mt-6 space-y-2">
+      <form onSubmit={handleSignup} className="mt-8 space-y-4">
         <div>
-          <label className="text-sm font-bold text-[#111827]">
-            Email
-          </label>
+          <label className="text-sm font-bold text-[#26322B]">Email</label>
 
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder="Enter your UP email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+            className="mt-2 h-12 w-full rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-4 text-sm text-[#26322B] shadow-sm outline-none transition placeholder:text-[#8F9892] focus:border-[#3F6F4F] focus:ring-2 focus:ring-[#3F6F4F]/20"
           />
         </div>
 
         <div>
-          <label className="text-sm font-bold text-[#111827]">
-            Username
-          </label>
+          <label className="text-sm font-bold text-[#26322B]">Username</label>
 
           <input
             type="text"
             placeholder="Enter your username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+            className="mt-2 h-12 w-full rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-4 text-sm text-[#26322B] shadow-sm outline-none transition placeholder:text-[#8F9892] focus:border-[#3F6F4F] focus:ring-2 focus:ring-[#3F6F4F]/20"
           />
         </div>
 
         <div>
-          <label className="text-sm font-bold text-[#111827]">
-            Password
-          </label>
+          <label className="text-sm font-bold text-[#26322B]">Password</label>
 
           <input
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+            className="mt-2 h-12 w-full rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-4 text-sm text-[#26322B] shadow-sm outline-none transition placeholder:text-[#8F9892] focus:border-[#3F6F4F] focus:ring-2 focus:ring-[#3F6F4F]/20"
           />
         </div>
 
         <div>
-          <label className="text-sm font-bold text-[#111827]">
+          <label className="text-sm font-bold text-[#26322B]">
             Confirm Password
           </label>
 
@@ -124,34 +119,22 @@ function Signup() {
             placeholder="Confirm your password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="mt-2 h-9 w-full rounded-lg border border-[#e5e7eb] px-4 text-sm outline-none focus:border-[#3f6f4f]"
+            className="mt-2 h-12 w-full rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-4 text-sm text-[#26322B] shadow-sm outline-none transition placeholder:text-[#8F9892] focus:border-[#3F6F4F] focus:ring-2 focus:ring-[#3F6F4F]/20"
           />
         </div>
 
-        <p className="text-xs leading-6 text-[#6b7280]">
-          By signing up, you agree to our{" "}
-          <span className="font-bold text-[#3f6f4f]">
-            Terms of Service
-          </span>{" "}
-          and{" "}
-          <span className="font-bold text-[#3f6f4f]">
-            Privacy Policy
-          </span>.
-        </p>
-
         <button
-          type="button"
-          onClick={handleSignup}
+          type="submit"
           disabled={loading}
-          className="h-10 w-full rounded-lg bg-[#3f6f4f] text-sm font-extrabold text-white"
+          className="mt-2 h-12 w-full rounded-xl bg-[#3F6F4F] text-sm font-bold text-white shadow-[0_10px_22px_rgba(32,58,42,0.16)] transition hover:bg-[#335C41] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Signing up..." : "Sign Up"}
+          {loading ? "Signing up..." : "Sign up"}
         </button>
       </form>
 
-      <p className="mt-8 text-center text-xs text-[#6b7280]">
+      <p className="mt-7 text-center text-sm text-[#5F6B63]">
         Already have an account?{" "}
-        <Link to="/login" className="font-bold text-[#3f6f4f]">
+        <Link to="/login" className="font-bold text-[#3F6F4F]">
           Log in
         </Link>
       </p>

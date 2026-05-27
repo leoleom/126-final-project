@@ -205,33 +205,91 @@ const getPendingAnonymousPosts = async (req, res) => {
 const approveAnonymousPost = async (req, res) => {
   const { postId } = req.params;
 
-  const { error } = await supabase
+  const { data: post, error: fetchError } = await supabase
+    .from("posts")
+    .select("id, title, author_id")
+    .eq("id", postId)
+    .single();
+
+  if (fetchError || !post) {
+    console.error("Error fetching post:", fetchError);
+    return res.status(500).json({
+      error: fetchError?.message || "Post not found",
+    });
+  }
+
+  const { error: updateError } = await supabase
     .from("posts")
     .update({ status: "live" })
     .eq("id", postId);
 
-  if (error) {
-    console.error("Error approving anonymous post:", error);
-    return res.status(500).json({ error: error.message });
+  if (updateError) {
+    console.error("Error approving anonymous post:", updateError);
+    return res.status(500).json({
+      error: updateError.message,
+    });
   }
 
-  return res.status(200).json({ success: true });
+  const { error: notificationError } = await supabase
+    .from("notifications")
+    .insert({
+      user_id: post.author_id,
+      message: `Your anonymous post "${post.title}" was approved.`,
+      type: "approval",
+    });
+
+  if (notificationError) {
+    console.error("Notification error:", notificationError);
+  }
+
+  return res.status(200).json({
+    success: true,
+  });
 };
 
 const rejectAnonymousPost = async (req, res) => {
   const { postId } = req.params;
 
-  const { error } = await supabase
+  const { data: post, error: fetchError } = await supabase
+    .from("posts")
+    .select("id, title, author_id")
+    .eq("id", postId)
+    .single();
+
+  if (fetchError || !post) {
+    console.error("Error fetching post:", fetchError);
+    return res.status(500).json({
+      error: fetchError?.message || "Post not found",
+    });
+  }
+
+  const { error: updateError } = await supabase
     .from("posts")
     .update({ status: "rejected" })
     .eq("id", postId);
 
-  if (error) {
-    console.error("Error rejecting anonymous post:", error);
-    return res.status(500).json({ error: error.message });
+  if (updateError) {
+    console.error("Error rejecting anonymous post:", updateError);
+    return res.status(500).json({
+      error: updateError.message,
+    });
   }
 
-  return res.status(200).json({ success: true });
+  const { error: notificationError } = await supabase
+    .from("notifications")
+    .insert({
+      user_id: post.author_id,
+      message: `Your anonymous post "${post.title}" was rejected.`,
+      type: "rejection",
+    });
+
+  if (notificationError) {
+    console.error("Notification error:", notificationError);
+  }
+
+  return res.status(200).json({
+    success: true,
+  });
 };
 
 // users

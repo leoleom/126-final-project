@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { supabase } from "./services/supabaseClient";
+import { useAuth } from "./utils/authUtils";
 
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -29,35 +28,15 @@ import AdminAnonPosts from "./pages/admin/adminAnonPosts";
 import AdminSettings from "./pages/admin/adminSettings";
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
+  const { user, authReady, setUser } = useAuth();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_OUT") {
-          setUser(null);
-          setAuthReady(true);
-          return;
-        }
-
-        if (event === "INITIAL_SESSION") {
-          if (session) {
-            const { data: profile } = await supabase
-              .from("users")
-              .select("id, email, username, display_name, avatar_url, role")
-              .eq("id", session.user.id)
-              .single();
-
-            if (profile) setUser(profile);
-          }
-          setAuthReady(true);
-        }
-      }
+  if (!authReady) {
+    return (
+      <div className="flex h-screen items-center justify-center font-bold">
+        Initializing Better Better UPV...
+      </div>
     );
-
-    return () => subscription.unsubscribe();
-  }, []);
+  }
 
   return (
     <BrowserRouter>
@@ -65,7 +44,6 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/guidelines" element={<Guidelines />} />
-      
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route path="/login"
@@ -93,10 +71,16 @@ function App() {
         <Route path="/post/:id"
           element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost user={user} /></ProtectedRoute>}
         />
+        <Route path="/posts/:id"
+          element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost user={user} /></ProtectedRoute>}
+        />
         <Route path="/settings"
           element={<ProtectedRoute user={user} authReady={authReady}><Settings user={user} setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/profile"
+          element={<ProtectedRoute user={user} authReady={authReady}><Profile user={user} /></ProtectedRoute>}
+        />
+        <Route path="/profile/:userId"
           element={<ProtectedRoute user={user} authReady={authReady}><Profile user={user} /></ProtectedRoute>}
         />
         <Route path="/bookmarks"
@@ -106,10 +90,10 @@ function App() {
           element={<ProtectedRoute user={user} authReady={authReady}><Drafts user={user} /></ProtectedRoute>}
         />
         <Route path="/settings/privacy"
-          element={<ProtectedRoute user={user} authReady={authReady}><Privacy setUser={setUser} /></ProtectedRoute>}
+          element={<ProtectedRoute user={user} authReady={authReady}><Privacy user={user} setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/settings/notifications"
-          element={<ProtectedRoute user={user} authReady={authReady}><Notifications setUser={setUser} /></ProtectedRoute>}
+          element={<ProtectedRoute user={user} authReady={authReady}><Notifications user={user} setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/settings/change-password"
           element={<ProtectedRoute user={user} authReady={authReady}><ChangePassword setUser={setUser} /></ProtectedRoute>}
