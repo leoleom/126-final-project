@@ -93,6 +93,9 @@ function App() {
         <Route path="/post/:id"
           element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost user={user} /></ProtectedRoute>}
         />
+        <Route path="/posts/:id"
+          element={<ProtectedRoute user={user} authReady={authReady}><ExpandedPost user={user} /></ProtectedRoute>}
+        />
         <Route path="/settings"
           element={<ProtectedRoute user={user} authReady={authReady}><Settings user={user} setUser={setUser} /></ProtectedRoute>}
         />
@@ -109,7 +112,7 @@ function App() {
           element={<ProtectedRoute user={user} authReady={authReady}><Privacy setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/settings/notifications"
-          element={<ProtectedRoute user={user} authReady={authReady}><Notifications setUser={setUser} /></ProtectedRoute>}
+          element={<ProtectedRoute user={user} authReady={authReady}><Notifications user={user} setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/settings/change-password"
           element={<ProtectedRoute user={user} authReady={authReady}><ChangePassword setUser={setUser} /></ProtectedRoute>}

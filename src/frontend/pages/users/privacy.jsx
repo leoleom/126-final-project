@@ -1,31 +1,79 @@
+import { useState } from "react";
 import SettingsNavbar from "../../components/settingsNavBar";
 
 function Privacy({ setUser }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [privateAccount, setPrivateAccount] = useState(false);
+  const [hideActivity, setHideActivity] = useState(false);
+
   return (
-    <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
-      <div className="mx-auto grid min-h-screen max-w-[1020px] grid-cols-[260px_1fr] bg-white">
-        <SettingsNavbar setUser={setUser} />
+    <div className="min-h-screen bg-[linear-gradient(135deg,#d7dfd8_0%,#cfd8d1_45%,#dbe3dc_100%)] text-[#1f2937]">
+      <div
+        className={`mx-auto grid min-h-screen max-w-[1680px] bg-[#e6ece7]/80 shadow-[0_20px_60px_rgba(63,111,79,0.12)] transition-all duration-300 ${
+          sidebarOpen
+            ? "grid-cols-[280px_minmax(0,1fr)]"
+            : "grid-cols-[96px_minmax(0,1fr)]"
+        }`}
+      >
+        <SettingsNavbar
+          setUser={setUser}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
-        <main className="px-16 py-20">
-          <h1 className="text-3xl font-extrabold">Privacy</h1>
-          <p className="mt-3 text-sm text-[#6b7280]">
-            Manage account privacy settings.
-          </p>
+        <main className="min-w-0 px-6 py-8 xl:px-10 2xl:px-14">
+          <div className="mx-auto max-w-[980px]">
+            <section className="rounded-[2rem] bg-[#eef3ef] px-8 py-8 shadow-[0_14px_35px_rgba(63,111,79,0.08)]">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#3F6F4F]">
+                Account Settings
+              </p>
 
-          <section className="mt-10 max-w-[560px] space-y-4">
-            <label className="flex items-center justify-between rounded-lg border border-[#e5e7eb] px-4 py-4 text-sm font-bold">
-              Private Account
-              <input type="checkbox" />
-            </label>
+              <h1 className="text-3xl font-bold tracking-tight text-[#26322B] sm:text-4xl">
+                Privacy
+              </h1>
 
-            <label className="flex items-center justify-between rounded-lg border border-[#e5e7eb] px-4 py-4 text-sm font-bold">
-              Hide Profile Activity
-              <input type="checkbox" />
-            </label>
-          </section>
+              <p className="mt-3 text-sm leading-6 text-[#5F6B63]">
+                Manage account privacy settings.
+              </p>
+            </section>
+
+            <section className="mt-8 space-y-4 rounded-[2rem] bg-[#eef3ef] p-8 shadow-[0_14px_35px_rgba(63,111,79,0.08)]">
+              <PrivacyToggle
+                title="Private Account"
+                description="Limit access to your profile and posts."
+                checked={privateAccount}
+                onChange={setPrivateAccount}
+              />
+
+              <PrivacyToggle
+                title="Hide Profile Activity"
+                description="Keep your likes, bookmarks, and activity less visible."
+                checked={hideActivity}
+                onChange={setHideActivity}
+              />
+            </section>
+          </div>
         </main>
       </div>
     </div>
+  );
+}
+
+function PrivacyToggle({ title, description, checked, onChange }) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-6 rounded-[1.5rem] border border-[#d4ddd6] bg-[#f4f7f4] px-6 py-5 shadow-sm transition hover:bg-white">
+      <div>
+        <p className="text-sm font-bold text-[#26322B]">{title}</p>
+        <p className="mt-1 text-sm leading-6 text-[#5F6B63]">{description}</p>
+      </div>
+
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-5 w-5 accent-[#3F6F4F]"
+      />
+    </label>
   );
 }
 

@@ -9,13 +9,13 @@ function AdminDashboard() {
   const [anonymousPosts, setAnonymousPosts] = useState([]);
   const [reportedPosts, setReportedPosts] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+
   useEffect(() => {
     loadAdminData();
   }, []);
 
   async function loadAdminData() {
-    const {ok, data} = await getAdminDashboardData();
+    const { ok, data } = await getAdminDashboardData();
 
     if (!ok) {
       console.error("Error fetching admin dashboard data:", data);
@@ -25,19 +25,20 @@ function AdminDashboard() {
       setReportedPosts([]);
       return;
     }
+
     setUsers(data.users || []);
     setPosts(data.posts || []);
     setAnonymousPosts(data.anonymousPosts || []);
     setReportedPosts(data.reportedPosts || []);
   }
 
-  const livePosts = (posts || []).filter((post) => post.status === "live").length;
+  const livePosts = posts.filter((post) => post.status === "live").length;
 
-  const pendingReports = (reportedPosts || []).filter(
+  const pendingReports = reportedPosts.filter(
     (post) => post.status === "pending"
   ).length;
 
-  const pendingAnonymousPosts = (anonymousPosts || []).filter(
+  const pendingAnonymousPosts = anonymousPosts.filter(
     (post) => post.status === "pending"
   ).length;
 
@@ -45,29 +46,33 @@ function AdminDashboard() {
     {
       label: "Total Users",
       value: users.length,
-      change: "Registered accounts",
+      subtitle: "Registered accounts",
+      tone: "blue",
     },
     {
       label: "Total Posts",
       value: posts.length,
-      change: `${pendingAnonymousPosts} pending anonymous`,
+      subtitle: `${pendingAnonymousPosts} pending anonymous`,
+      tone: "green",
     },
     {
-      label: "Total Reports",
+      label: "Reports",
       value: reportedPosts.length,
-      change: `${pendingReports} pending`,
+      subtitle: `${pendingReports} pending review`,
+      tone: "amber",
     },
     {
       label: "Live Posts",
       value: livePosts,
-      change: "Currently visible",
+      subtitle: "Currently visible",
+      tone: "mint",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f8f7] text-[#1f2937]">
+    <div className="min-h-screen bg-[linear-gradient(135deg,#d7dfd8_0%,#cfd8d1_45%,#dbe3dc_100%)] text-[#1f2937]">
       <div
-        className={`mx-auto grid min-h-screen max-w-[1280px] bg-white ${
+        className={`mx-auto grid min-h-screen max-w-[95vw] bg-[#eef3ef]/90 transition-all duration-300 ${
           sidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[88px_1fr]"
         }`}
       >
@@ -76,94 +81,181 @@ function AdminDashboard() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="px-8 py-9">
-          <section className="grid grid-cols-4 gap-5">
-            {stats.map((stat) => (
-              <StatCard key={stat.label} {...stat} />
-            ))}
+        <main className="px-8 py-10 md:px-12 xl:px-16">
+          <section className="mx-auto overflow-hidden rounded-[2rem] border border-[#d6dfd8] bg-[#f7faf7]/95 shadow-[0_18px_40px_rgba(63,111,79,0.08)]">
+            {/* Header */}
+            <div className="border-b border-[#dfe6e0] px-8 py-8 xl:px-10">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#3F6F4F]">
+                Administration
+              </p>
+
+              <div className="mt-3 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight text-[#26322B]">
+                    Dashboard Overview
+                  </h1>
+
+                  <p className="mt-3 text-sm leading-6 text-[#5F6B63]">
+                    Monitor community activity, moderation tasks, and platform
+                    health.
+                  </p>
+                </div>
+
+                <div className="w-fit rounded-2xl border border-[#d4ddd6] bg-[#e7eee8] px-5 py-3 text-sm font-bold text-[#3F6F4F]">
+                  Admin Control Panel
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {stats.map((stat) => (
+                  <StatCard key={stat.label} {...stat} />
+                ))}
+              </div>
+            </div>
+
+            {/* Anonymous Posts */}
+            <div className="px-8 py-8 xl:px-10">
+              <SectionTable
+                title="Review Anonymous Posts"
+                rows={anonymousPosts}
+                columns={["Post", "ID", "Date", "Status"]}
+                fields={["post", "id", "date", "status"]}
+                linkText="View all anonymous posts"
+                linkPath="/admin/anonymous-posts"
+                tone="blue"
+              />
+            </div>
+
+            <div className="mx-8 h-px bg-[#e3e9e4] xl:mx-10" />
+
+            {/* Reported Posts */}
+            <div className="px-8 py-8 xl:px-10">
+              <SectionTable
+                title="Recent Reported Posts"
+                rows={reportedPosts}
+                columns={["Post", "Reported by", "Date", "Status"]}
+                fields={["post", "reportedBy", "date", "status"]}
+                linkText="View all reported posts"
+                linkPath="/admin/reported-posts"
+                tone="amber"
+              />
+            </div>
           </section>
-
-          <DataTable
-            title="Review Anonymous Posts"
-            columns={["Post", "ID", "Date", "Status"]}
-            rows={anonymousPosts}
-            fields={["post", "id", "date", "status"]}
-            linkText="View all anonymous posts"
-            linkPath="/admin/anonymous-posts"
-          />
-
-          <DataTable
-            title="Recent Reported Posts"
-            columns={["Post", "Reported by", "Date", "Status"]}
-            rows={reportedPosts}
-            fields={["post", "reportedBy", "date", "status"]}
-            linkText="View all reported posts"
-            linkPath="/admin/reported-posts"
-          />
         </main>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, change }) {
+function StatCard({ label, value, subtitle, tone }) {
+  const tones = {
+    blue: "bg-[#eef4f6] text-[#365766]",
+    green: "bg-[#edf5ee] text-[#3F6F4F]",
+    amber: "bg-[#f7f1e4] text-[#8A5A2B]",
+    mint: "bg-[#eaf4ef] text-[#3F725A]",
+  };
+
   return (
-    <article className="rounded-lg border border-[#e5e7eb] bg-white p-7">
-      <p className="text-sm font-extrabold text-[#111827]">{label}</p>
+    <article
+      className={`rounded-2xl px-5 py-5 shadow-sm ${
+        tones[tone] || tones.green
+      }`}
+    >
+      <p className="text-sm font-bold text-[#5F6B63]">{label}</p>
 
-      <h2 className="mt-6 text-4xl font-extrabold text-[#1f2937]">
-        {value}
-      </h2>
+      <h2 className="mt-4 text-4xl font-bold text-[#26322B]">{value}</h2>
 
-      <p className="mt-6 text-xs font-bold text-[#3f6f4f]">{change}</p>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em]">
+        {subtitle}
+      </p>
     </article>
   );
 }
 
-function DataTable({ title, columns, rows, fields, linkText, linkPath }) {
+function SectionTable({
+  title,
+  rows,
+  columns,
+  fields,
+  linkText,
+  linkPath,
+  tone,
+}) {
+  const tones = {
+    blue: "bg-[#edf3f6]",
+    amber: "bg-[#f7f1e4]",
+    green: "bg-[#e7eee8]",
+  };
+
   return (
-    <section className="mt-6 rounded-lg border border-[#e5e7eb] bg-white">
-      <h2 className="px-7 py-5 text-xl font-extrabold">{title}</h2>
+    <section>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-[#26322B]">{title}</h2>
+          <p className="mt-1 text-sm text-[#7A857E]">
+            {rows.length} item{rows.length !== 1 ? "s" : ""}
+          </p>
+        </div>
 
-      <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-[#e6f0ea]">
-          <tr>
-            {columns.map((column) => (
-              <th key={column} className="px-7 py-4 font-extrabold">
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
+        <Link
+          to={linkPath}
+          className="text-sm font-bold text-[#3F6F4F] transition hover:text-[#335C41]"
+        >
+          {linkText} →
+        </Link>
+      </div>
 
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-7 py-6 text-sm font-semibold text-[#6b7280]">
-                No data available.
-              </td>
-            </tr>
-          ) : (
-            rows.map((row, rowIndex) => (
-              <tr key={row.id || rowIndex} className="border-t border-[#e5e7eb]">
-                {fields.map((field) => (
-                  <td key={field} className="px-7 py-4 font-semibold">
-                    {field === "status" ? (
-                      <StatusBadge status={row[field]} />
-                    ) : (
-                      row[field]
-                    )}
-                  </td>
+      <div className="overflow-hidden rounded-2xl border border-[#dbe4dd] bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left">
+            <thead className={tones[tone] || tones.green}>
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column}
+                    className="px-6 py-4 text-xs font-bold uppercase tracking-[0.14em] text-[#5F6B63]"
+                  >
+                    {column}
+                  </th>
                 ))}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
 
-      <Link to={linkPath} className="block px-7 py-4 text-sm font-extrabold text-[#3f6f4f]">
-        {linkText} →
-      </Link>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-6 py-8 text-sm text-[#7f8b84]"
+                  >
+                    No data available.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row, index) => (
+                  <tr
+                    key={row.id || index}
+                    className="border-t border-[#edf2ee] transition hover:bg-[#f8fbf9]"
+                  >
+                    {fields.map((field) => (
+                      <td
+                        key={field}
+                        className="px-6 py-5 text-sm font-medium text-[#26322B]"
+                      >
+                        {field === "status" ? (
+                          <StatusBadge status={row[field]} />
+                        ) : (
+                          row[field]
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
   );
 }
@@ -173,12 +265,12 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`rounded-full px-4 py-1 text-xs font-extrabold ${
+      className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.08em] ${
         status === "pending"
-          ? "bg-[#fde68a] text-[#92400e]"
+          ? "bg-[#fef3c7] text-[#92400e]"
           : status === "live" || status === "resolved"
-          ? "bg-[#bbf7d0] text-[#166534]"
-          : "bg-[#fecaca] text-[#991b1b]"
+          ? "bg-[#d7f0dd] text-[#166534]"
+          : "bg-[#fee2e2] text-[#991b1b]"
       }`}
     >
       {label}
