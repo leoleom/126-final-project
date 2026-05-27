@@ -13,7 +13,7 @@ function Feed({ user }) {
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bookmarkingPostId, setBookmarkingPostId] = useState(null);
   const [reportPostId, setReportPostId] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -226,8 +226,8 @@ function Feed({ user }) {
       <div
         className={`grid min-h-screen transition-all duration-300 ${
           sidebarOpen
-            ? "grid-cols-[280px_minmax(0,1fr)]"
-            : "grid-cols-[96px_minmax(0,1fr)]"
+            ? "grid-cols-[280px_minmax(0,1fr)] md:grid-cols-[280px_minmax(0,1fr)]"
+            : "grid-cols-[96px_minmax(0,1fr)] md:grid-cols-[96px_minmax(0,1fr)]"
         }`}
       >
         <Navbar
@@ -236,7 +236,7 @@ function Feed({ user }) {
           setSidebarOpen={setSidebarOpen}
         />
 
-        <div className="grid min-w-0 grid-rows-[112px_1fr]">
+        <div className="grid min-w-0 grid-rows-[88px_1fr] md:grid-rows-[112px_1fr]">
           <TopBar
             user={user}
             searchQuery={searchQuery}
@@ -245,7 +245,7 @@ function Feed({ user }) {
 
           <div className="grid min-w-0 grid-cols-1 gap-8 2xl:grid-cols-[minmax(0,1fr)_340px]">
             <main className="min-w-0">
-              <section className="px-6 py-8 xl:px-10 2xl:px-14">
+              <section className="px-3 py-5 md:px-6 md:py-8 xl:px-10 2xl:px-14">
 
                 <div className="mt-1 flex flex-wrap gap-3">
                   {["Latest", "Trending", "Popular"].map((tab) => (
@@ -253,7 +253,7 @@ function Feed({ user }) {
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`rounded-xl px-7 py-2.5 text-sm font-semibold shadow-sm transition-all duration-300 hover:-translate-y-0.5 ${
+                      className={`rounded-xl px-4 py-2.5 text-xs font-semibold shadow-sm transition-all duration-300 hover:-translate-y-0.5 sm:px-5 md:px-7 md:py-2.5 md:text-sm${
                         activeTab === tab
                           ? "bg-[#3F6F4F] text-white shadow-[0_10px_24px_rgba(63,111,79,0.22)]"
                           : "border border-[#cfd8d1] bg-[#edf2ee] text-[#3F6F4F] hover:border-[#3F6F4F] hover:bg-[#f4f7f4]"
@@ -270,7 +270,7 @@ function Feed({ user }) {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 ${
+                      className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 md:px-4 md:py-2 md:text-xs${
                         selectedTags.includes(tag)
                           ? "bg-[#3F6F4F] text-white"
                           : "bg-[#dfe8e2] text-[#3F6F4F] hover:bg-[#edf2ee]"
@@ -292,7 +292,7 @@ function Feed({ user }) {
                 </div>
 
                 {(searchQuery || selectedTags.length > 0) && (
-                  <div className="mt-5 rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-5 py-3 text-sm font-medium text-[#5F6B63] shadow-sm">
+                  <div className="mt-5 rounded-xl border border-[#d4ddd6] bg-[#eef3ef] px-5 py-3 text-sm font-medium text-[#5F6B63] shadow-sm md:px-5 md:text-sm">
                     {searchQuery && <span>Search: {searchQuery}</span>}
 
                     {searchQuery && selectedTags.length > 0 && (
@@ -305,7 +305,7 @@ function Feed({ user }) {
                   </div>
                 )}
 
-                <div className="mt-8 space-y-7">
+                <div className="mt-8 space-y-5 md:mt-8 md:space-y-7">
                   {loading && <LoadingCards />}
 
                   {!loading && filteredPosts.length === 0 && (
@@ -319,7 +319,7 @@ function Feed({ user }) {
                     filteredPosts.map((post) => (
                       <div
                         key={post.id}
-                        className="rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-1 shadow-[0_14px_35px_rgba(63,111,79,0.08)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#f4f7f4] hover:shadow-[0_18px_45px_rgba(63,111,79,0.12)]"
+                        className="rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-1 shadow-[0_14px_35px_rgba(63,111,79,0.08)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#f4f7f4] hover:shadow-[0_18px_45px_rgba(63,111,79,0.12)] md:rounded-[1.5rem] md:p-1"
                       >
                         <PostCard
                           id={post.id}
@@ -429,7 +429,7 @@ function LoadingCards() {
       {[1, 2, 3].map((item) => (
         <div
           key={item}
-          className="h-44 animate-pulse rounded-[1.5rem] bg-[#eef3ef] shadow-[0_12px_30px_rgba(63,111,79,0.08)]"
+          className="h-36 animate-pulse rounded-[1.5rem] bg-[#eef3ef] shadow-[0_12px_30px_rgba(63,111,79,0.08)] md:h-44 md:rounded-[1.5rem]"
         />
       ))}
     </div>
@@ -440,7 +440,7 @@ function EmptyState({ searchQuery, selectedTags }) {
   const hasFilters = searchQuery || selectedTags.length > 0;
 
   return (
-    <div className="rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-8 shadow-[0_12px_30px_rgba(63,111,79,0.08)]">
+    <div  className="rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-8 shadow-[0_12px_30px_rgba(63,111,79,0.08)] md:rounded-[1.5rem] md:p-8">
       <h3 className="text-lg font-bold text-[#26322B]">
         No conversations found
       </h3>
