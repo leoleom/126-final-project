@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import SettingsNavbar from "../components/settingsNavbar";
 import { updateUserProfile, uploadAvatar } from "../utils/apiUtils";
 import ConfirmDialog from "../components/confirmDialog";
+import ChangePasswordForm from "../components/ChangePasswordForm";
 
 function Settings({ user, setUser }) {
   const navigate = useNavigate();
@@ -124,6 +125,7 @@ function Settings({ user, setUser }) {
               </p>
             </section>
 
+            {/* Profile Inputs Card Section */}
             <section className="mt-8 rounded-[2rem] bg-[#eef3ef] p-8 shadow-[0_14px_35px_rgba(63,111,79,0.08)]">
               <div className="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
                 {/* Profile Preview */}
@@ -218,19 +220,23 @@ function Settings({ user, setUser }) {
                 </button>
               </div>
             </section>
+
+            <section className="mt-8 rounded-[2rem] bg-[#eef3ef] p-8 shadow-[0_14px_35px_rgba(63,111,79,0.08)]">
+              <ChangePasswordForm />
+            </section>
           </div>
         </main>
       </div>
-    <ConfirmDialog
-      open={showDeleteConfirm}
-      title="Delete account?"
-      message="This action cannot be undone. Your account will be removed from this session."
-      confirmText="Delete Account"
-      cancelText="Cancel"
-      danger
-      onConfirm={handleDeleteAccount}
-      onCancel={() => setShowDeleteConfirm(false)}
-    />
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete account?"
+        message="This action cannot be undone. Your account will be removed from this session."
+        confirmText="Delete Account"
+        cancelText="Cancel"
+        danger
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

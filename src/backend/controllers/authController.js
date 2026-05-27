@@ -80,4 +80,37 @@ async function signup(req, res) {
   return res.status(200).json({ success: true });
 }
 
-module.exports = { login, signup };
+async function changePassword(req, res) {
+  try {
+    const { newPassword } = req.body;
+
+    // 1. Validation check
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ 
+        error: "Password must be at least 6 characters long." 
+      });
+    }
+
+    // 2. Extract authorization header token sent from React frontend
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Access denied. No token provided." });
+    }
+    const token = authHeader.split(" ")[1];
+
+    // 3. Request Supabase to update the password using the user's active token context
+    const { error } = await supabase.auth.updateUser(
+      { password: newPassword },
+      { accessToken: token }
+    );
+
+    if (error) throw error;
+
+    return res.status(200).json({ message: "Password updated successfully!" });
+  } catch (error) {
+    console.error("[Backend Password Change Error]:", error.message);
+    return res.status(500).json({ error: error.message || "Internal server error." });
+  }
+}
+
+module.exports = { login, signup, changePassword };
