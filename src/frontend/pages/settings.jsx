@@ -35,15 +35,19 @@ function Settings({ user, setUser }) {
 
       if (!ok) {
         toast.error(data.error || "Upload failed.");
+        URL.revokeObjectURL(previewUrl);
         setUploading(false);
         return;
       }
 
       setProfilePicture(data.publicUrl);
+      URL.revokeObjectURL(previewUrl);
+
       toast.success("Profile photo updated.");
     } catch (error) {
       console.error(error);
       toast.error("Upload failed.");
+      URL.revokeObjectURL(previewUrl);
     }
 
     setUploading(false);
