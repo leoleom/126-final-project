@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import SettingsNavbar from "../../components/settingsNavBar";
+import SettingsNavbar from "../../components/settingsNavbar";
 import ConfirmDialog from "../../components/confirmDialog";
 import { supabase } from "../../services/supabaseClient";
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import SettingsNavbar from "../components/SettingsNavbar";
+import SettingsNavbar from "../components/settingsNavbar";
 import { updateUserProfile, uploadAvatar } from "../utils/apiUtils";
 import ConfirmDialog from "../components/confirmDialog";
 
