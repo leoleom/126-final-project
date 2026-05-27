@@ -52,6 +52,14 @@ function Profile({ user }) {
       const { data } = await getUserPosts(targetId);
       const shaped = (data || []).filter((post) => !post.is_anonymous).map((post) => ({
         id: post.id,
+        authorId: post.author_id,
+        username: post.is_anonymous
+          ? "Anonymous"
+          : `@${post.author?.username ?? "unknown"}`,
+        profilePicture: post.is_anonymous 
+          ? null 
+          : post.author?.avatar_url,
+        createdAt: post.created_at,
         title: post.title,
         body: post.content,
         time: formatTimeAgo(post.created_at),

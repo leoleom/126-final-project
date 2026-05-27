@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "server": "node src/backend/app.js",
+    "fullstack": "concurrently \"npm run dev\" \"npm run server\"",
     "start": "node src/backend/app.js"
   },
   "repository": {
