@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { Search, User } from "lucide-react";
 
-function TopBar({ user, searchQuery, setSearchQuery }) {
+function TopBar({ user, searchQuery, setSearchQuery, showSearch=true }) {
   return (
-    <header className="flex h-24 items-center justify-between border-b border-[#cfd8d1] bg-[#e6ece7]/85 px-6 backdrop-blur-xl xl:px-9">
+    <header className={`sticky top-0 z-40 flex h-24 items-center border-b border-[#cfd8d1] bg-[#e6ece7]/85 px-6 backdrop-blur-xl xl:px-9 
+      ${  showSearch ? "justify-between" : "justify-end"}`}
+    >
       {/* Search */}
+      {showSearch !== false && (
       <div className="flex h-12 w-full max-w-[560px] items-center rounded-2xl border border-[#d4ddd6] bg-[#eef3ef] px-4 shadow-sm transition focus-within:border-[#3F6F4F] focus-within:shadow-[0_8px_20px_rgba(63,111,79,0.10)]">
         <Search size={18} className="text-[#6b756d]" />
 
@@ -16,7 +19,7 @@ function TopBar({ user, searchQuery, setSearchQuery }) {
           className="ml-3 h-full flex-1 bg-transparent text-sm font-medium text-[#26322B] outline-none placeholder:text-[#8F9892]"
         />
       </div>
-
+      )}
       {/* Profile */}
       <Link
         to="/profile"

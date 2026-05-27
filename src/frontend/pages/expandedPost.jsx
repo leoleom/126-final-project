@@ -230,7 +230,7 @@ function ExpandedPost({ user }) {
         />
 
         <div className="grid min-w-0 grid-rows-[112px_1fr]">
-          <TopBar user={user} searchQuery="" setSearchQuery={() => {}} />
+          <TopBar user={user} searchQuery="" setSearchQuery={() => {}} showSearch={false}/>
 
           <div className="min-w-0 px-6 py-8 xl:px-10 2xl:px-14">
             <main className="mx-auto grid max-w-[1320px] grid-cols-1 gap-8 2xl:grid-cols-[minmax(0,1fr)_340px]">

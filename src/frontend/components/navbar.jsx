@@ -43,7 +43,7 @@ function Navbar({ user, sidebarOpen, setSidebarOpen }) {
   ];
 
   return (
-    <aside className="border-r border-[#cfd8d1] bg-[#e6ece7]/90 px-6 py-10 shadow-[8px_0_30px_rgba(63,111,79,0.06)]">
+    <aside className="sticky top-0 h-screen border-r border-[#cfd8d1] bg-[#e6ece7]/90 px-6 py-10 shadow-[8px_0_30px_rgba(63,111,79,0.06)]">
       <div className="flex items-center justify-between">
         {sidebarOpen && (
           <h1 className="text-lg font-extrabold leading-tight text-[#3F6F4F]">
