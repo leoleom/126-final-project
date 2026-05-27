@@ -169,14 +169,18 @@ const updateUserProfile = async (req, res) => {
     .update(updates)
     .eq("id", userId)
     .select()
-    .maybesingle();
+    .maybeSingle();
 
-  if (error || !data) {
-    return res.status(500).json({error: error?.message ?? "Failed to update profile",});
+  if (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
   }
-  
+
   if (!data) {
-    return res.status(404).json({ error: "User not found." });
+    return res.status(404).json({
+      error: "User not found.",
+    });
   }
 
   return res.json(data);

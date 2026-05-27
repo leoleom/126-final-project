@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import SettingsNavbar from "../components/SettingsNavbar";
+import SettingsNavbar from "../components/settingsNavbar";
 import { updateUserProfile, uploadAvatar } from "../utils/apiUtils";
 import ConfirmDialog from "../components/confirmDialog";
 
@@ -35,15 +35,19 @@ function Settings({ user, setUser }) {
 
       if (!ok) {
         toast.error(data.error || "Upload failed.");
+        URL.revokeObjectURL(previewUrl);
         setUploading(false);
         return;
       }
 
       setProfilePicture(data.publicUrl);
+      URL.revokeObjectURL(previewUrl);
+
       toast.success("Profile photo updated.");
     } catch (error) {
       console.error(error);
       toast.error("Upload failed.");
+      URL.revokeObjectURL(previewUrl);
     }
 
     setUploading(false);

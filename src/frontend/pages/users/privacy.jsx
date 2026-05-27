@@ -1,5 +1,5 @@
 import { useState } from "react";
-import SettingsNavbar from "../../components/settingsNavBar";
+import SettingsNavbar from "../../components/settingsNavbar";
 import toast from "react-hot-toast";
 import { updateUserProfile } from "../../utils/apiUtils";
 

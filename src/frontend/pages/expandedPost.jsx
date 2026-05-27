@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../components/navbar";
 import TopBar from "../components/topBar";
-import {getPostById, getComments, createComment, toggleVote, incrementPostView} from "../utils/apiUtils";
+import { getPostById, getComments, createComment, toggleVote, incrementPostView } from "../utils/apiUtils";
 
 function ExpandedPost({ user }) {
   const { id } = useParams();
@@ -217,11 +217,10 @@ function ExpandedPost({ user }) {
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#d7dfd8_0%,#cfd8d1_45%,#dbe3dc_100%)] text-[#1f2937]">
       <div
-        className={`mx-auto grid min-h-screen max-w-[1680px] bg-[#e6ece7]/80 shadow-[0_20px_60px_rgba(63,111,79,0.12)] transition-all duration-300 ${
-          sidebarOpen
+        className={`mx-auto grid min-h-screen max-w-[1680px] bg-[#e6ece7]/80 shadow-[0_20px_60px_rgba(63,111,79,0.12)] transition-all duration-300 ${sidebarOpen
             ? "grid-cols-[280px_minmax(0,1fr)]"
             : "grid-cols-[96px_minmax(0,1fr)]"
-        }`}
+          }`}
       >
         <Navbar
           user={user}
@@ -242,77 +241,95 @@ function ExpandedPost({ user }) {
                   Back to all posts
                 </Link>
 
-                <article className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
-                  {isRemoved ? (
-                    <div className="py-20 text-center">
-                      <h1 className="text-3xl font-bold text-[#5F6B63]">
-                        This post has been removed.
-                      </h1>
+<article className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
+  {isRemoved ? (
+    <div className="py-20 text-center">
+      <h1 className="text-3xl font-bold text-[#5F6B63]">
+        This post has been removed.
+      </h1>
 
-                      <p className="mt-4 text-sm text-[#8B968F]">
-                        The content and interactions are no longer available.
-                      </p>
-                    </div>
-                  ) : (<>
-                    <div className="flex items-center gap-4">
-                      {post.author?.avatar_url && !post.is_anonymous ? (
-                        <img
-                          src={post.author.avatar_url}
-                          alt={authorName}
-                          className="h-14 w-14 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-14 w-14 rounded-full bg-[#c5cbc7]" />
-                      )}
+      <p className="mt-4 text-sm text-[#8B968F]">
+        The content and interactions are no longer available.
+      </p>
+    </div>
+  ) : (
+    <>
+      <div className="flex items-center gap-4">
+        {!post.is_anonymous && post.author ? (
+          <Link to={`/profile/${post.author.id}`} className="shrink-0">
+            {post.author.avatar_url ? (
+              <img
+                src={post.author.avatar_url}
+                alt={authorName}
+                className="h-14 w-14 rounded-full object-cover transition hover:opacity-80"
+              />
+            ) : (
+              <div className="h-14 w-14 rounded-full bg-[#c5cbc7] transition hover:opacity-80" />
+            )}
+          </Link>
+        ) : (
+          <div className="h-14 w-14 rounded-full bg-[#c5cbc7]" />
+        )}
 
-                      <div>
-                        <p className="text-sm font-bold text-[#26322B]">
-                          {authorName}
-                        </p>
-                        <p className="text-xs font-semibold text-[#8B968F]">
-                          {formatTimeAgo(post.created_at)}
-                        </p>
-                      </div>
-                    </div>
+        <div>
+          {!post.is_anonymous && post.author ? (
+            <Link
+              to={`/profile/${post.author.id}`}
+              className="text-sm font-bold text-[#26322B] transition hover:text-[#3F6F4F] hover:underline"
+            >
+              {authorName}
+            </Link>
+          ) : (
+            <p className="text-sm font-bold text-[#26322B]">
+              {authorName}
+            </p>
+          )}
 
-                    <h1 className="mt-8 break-words text-3xl font-bold tracking-tight text-[#26322B]">
-                      {post.title}
-                    </h1>
+          <p className="text-xs font-semibold text-[#8B968F]">
+            {formatTimeAgo(post.created_at)}
+          </p>
+        </div>
+      </div>
 
-                    {tags.length > 0 && (
-                      <div className="mt-6 flex flex-wrap gap-2.5">
-                        {tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-[#dfe8e2] px-4 py-2 text-xs font-bold text-[#3F6F4F]"
-                          >
-                            # {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+      <h1 className="mt-8 break-words text-3xl font-bold tracking-tight text-[#26322B]">
+        {post.title}
+      </h1>
 
-                    <div
-                      className="prose prose-sm mt-6 max-w-none break-words leading-7 text-[#374151]"
-                      dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
-                    />
+      {tags.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-2.5">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#dfe8e2] px-4 py-2 text-xs font-bold text-[#3F6F4F]"
+            >
+              # {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
-                    <div className="mt-8 flex flex-wrap gap-6 border-t border-[#d9e1db] pt-5 text-sm font-bold text-[#7f8b84]">
-                      <button
-                        type="button"
-                        onClick={handleLike}
-                        className={`transition ${
-                          likedByUser ? "text-red-500" : "hover:text-red-400"
-                        }`}
-                      >
-                        {likes} Likes
-                      </button>
+      <div
+        className="prose prose-sm mt-6 max-w-none break-words leading-7 text-[#374151]"
+        dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
+      />
 
-                      <span>{views} Views</span>
-                      <span>{comments.length} Comments</span>
-                    </div>
-                </>
-                )}   
+      <div className="mt-8 flex flex-wrap gap-6 border-t border-[#d9e1db] pt-5 text-sm font-bold text-[#7f8b84]">
+        <button
+          type="button"
+          onClick={handleLike}
+          className={`transition ${
+            likedByUser ? "text-red-500" : "hover:text-red-400"
+          }`}
+        >
+          {likes} Likes
+        </button>
+
+        <span>{views} Views</span>
+        <span>{comments.length} Comments</span>
+      </div>
+    </>
+  )}
+</article>
                 </article>
 
                 <section className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
@@ -364,11 +381,10 @@ function ExpandedPost({ user }) {
                     {comments.map((comment) => (
                       <Comment
                         key={comment.id}
-                        username={`@${
-                          comment.author?.username ??
+                        username={`@${comment.author?.username ??
                           comment.author?.display_name ??
                           "unknown"
-                        }`}
+                          }`}
                         content={comment.content}
                         time={formatTimeAgo(comment.created_at)}
                         avatarUrl={comment.author?.avatar_url}
@@ -381,7 +397,7 @@ function ExpandedPost({ user }) {
               <aside className="hidden space-y-8 pt-12 2xl:block">
                 {!post.is_anonymous && post.author && (
                   <SideCard title="About the author">
-                    <div className="flex items-center gap-4">
+                    <Link to={`/profile/${post.author.id}`} className="flex items-center gap-4 transition hover:opacity-80">
                       {post.author.avatar_url ? (
                         <img
                           src={post.author.avatar_url}
@@ -393,14 +409,14 @@ function ExpandedPost({ user }) {
                       )}
 
                       <div>
-                        <p className="text-sm font-bold text-[#26322B]">
+                        <p className="text-sm font-bold text-[#26322B] hover:text-[#3F6F4F] hover:underline">
                           {authorName}
                         </p>
                         <p className="text-xs text-[#5F6B63]">
                           Joined {formatJoinDate(post.author.created_at)}
                         </p>
                       </div>
-                    </div>
+                    </Link>
 
                     {post.author.bio && (
                       <p className="mt-5 text-sm leading-6 text-[#4F5C55]">

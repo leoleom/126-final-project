@@ -45,7 +45,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/guidelines" element={<Guidelines />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        
+
         <Route path="/login"
           element={
             authReady && user
@@ -78,6 +78,9 @@ function App() {
           element={<ProtectedRoute user={user} authReady={authReady}><Settings user={user} setUser={setUser} /></ProtectedRoute>}
         />
         <Route path="/profile"
+          element={<ProtectedRoute user={user} authReady={authReady}><Profile user={user} /></ProtectedRoute>}
+        />
+        <Route path="/profile/:userId"
           element={<ProtectedRoute user={user} authReady={authReady}><Profile user={user} /></ProtectedRoute>}
         />
         <Route path="/bookmarks"
