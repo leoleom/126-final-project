@@ -209,10 +209,9 @@ function ExpandedPost({ user }) {
     post.votes?.some(
       (v) => v.vote_type === "upvote" && v.author_id === user?.id
     ) ?? false;
-
   const isRemoved = post.status === "deleted";
   const authorName = post.is_anonymous
-    ? "Anonymous"
+    ? "Anonymous" + (post.author_id === user?.id ? " (You)" : "")
     : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`;
 
   return (

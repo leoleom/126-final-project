@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../components/navbar";
 import PostCard from "../components/postCard";
-import { getUserPosts } from "../utils/apiUtils";
+import { getUserPosts, toggleVote } from "../utils/apiUtils";
 import treesImage from "../public/ll-trees.png";
 
 function Profile({ user }) {
@@ -23,14 +23,22 @@ function Profile({ user }) {
 
       const shaped = (data || []).map((post) => ({
         id: post.id,
+        authorId: post.author_id,
+        username: post.is_anonymous
+          ? "Anonymous (You)"
+          : `@${user?.username}`,
+        profilePicture: post.is_anonymous ? null : user?.avatar_url,
+        createdAt: post.created_at,
         title: post.title,
         body: post.content,
-        time: formatTimeAgo(post.created_at),
-        tags:
-          post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
-        likes:
-          post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+        tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
+        likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+        likedByUser:
+          post.votes?.some(
+            (v) => v.vote_type === "upvote" && v.author_id === user?.id
+          ) ?? false,
         views: post.views ?? 0,
+        comments: post.comments?.length ?? 0,
       }));
 
       setPosts(shaped);
@@ -40,6 +48,26 @@ function Profile({ user }) {
     }
 
     setLoading(false);
+  }
+
+  async function handleLike(postId) {
+    if (!user) {toast.error("Please log in to like posts."); return;}
+
+    try {
+      const { ok, data } = await toggleVote(postId, user.id);
+
+      if (!ok) {toast.error(data.error || "Unable to update reaction."); return;}
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+          return {...post, likedByUser: data.liked, likes: data.liked ? post.likes + 1 : Math.max(post.likes - 1, 0),};
+        })
+      );
+    } catch (error) {
+      console.error("Vote failed:", error);
+      toast.error("Unable to update reaction.");
+    }
   }
 
   function formatTimeAgo(createdAt) {
@@ -175,13 +203,15 @@ function Profile({ user }) {
                   >
                     <PostCard
                       id={post.id}
-                      username={`@${user?.username}`}
-                      profilePicture={user?.avatar_url}
+                      username={post.username}
+                      profilePicture={post.profilePicture}
                       time={post.time}
                       title={post.title}
                       body={post.body}
                       tags={post.tags}
                       likes={post.likes}
+                      likedByUser={post.likedByUser}
+                      onLike={() => handleLike(post.id)}
                       views={post.views}
                     />
                   </div>
