@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+
 function ConfirmDialog({
   open,
   title,
@@ -9,10 +11,10 @@ function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 px-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/30 px-4 pointer-events-auto">
       <div className="w-full max-w-md rounded-[1.5rem] border border-[#d4ddd6] bg-[#f8fbf8] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
         <h2 className="text-xl font-bold text-[#26322B]">{title}</h2>
 
@@ -44,7 +46,8 @@ function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
