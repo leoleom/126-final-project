@@ -15,8 +15,10 @@ const getUserPosts = async (req, res) => {
       content,
       is_anonymous,
       created_at,
+      views,
       post_tags (tags (name)),
-      votes (id, vote_type)
+      votes (id, vote_type),
+      comments (id)
     `)
     .eq("author_id", userId)
     .in("status", ["live", "pending"])
