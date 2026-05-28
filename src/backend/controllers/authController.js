@@ -80,4 +80,20 @@ async function signup(req, res) {
   return res.status(200).json({ success: true });
 }
 
-module.exports = { login, signup };
+async function logout(req, res) {
+  try {
+    // Sign out from Supabase
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ error: "Logout failed." });
+  }
+}
+
+module.exports = { login, signup, logout };

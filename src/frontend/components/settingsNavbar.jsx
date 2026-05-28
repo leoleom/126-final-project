@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ConfirmDialog from "./confirmDialog";
-import { supabase } from "../services/supabaseClient";
+import { logoutUser } from "../utils/apiUtils";
 import {Home, User, Shield, Bell, KeyRound, LogOut, PanelLeftClose, PanelLeftOpen,} from "lucide-react";
 
 function SettingsNavbar({ setUser, sidebarOpen = true, setSidebarOpen }) {
@@ -19,9 +19,9 @@ function SettingsNavbar({ setUser, sidebarOpen = true, setSidebarOpen }) {
   ];
 
   async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
+    const { ok } = await logoutUser();
 
-    if (error) {
+    if (!ok) {
       toast.error("Logout failed.");
       return;
     }

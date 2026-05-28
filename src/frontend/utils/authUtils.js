@@ -69,9 +69,5 @@ export function useAuth() {
   return { user, authReady, setUser };
 }
 
-export async function logoutUser() {
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {console.error("Error logging out:", error.message);
-}
-}
+// Note: Use logoutUser from apiUtils instead - it calls the backend logout endpoint
+// This prevents 403 errors from calling Supabase directly without a valid session
