@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import { supabase } from "../services/supabaseClient";
 import ConfirmDialog from "./confirmDialog";
+import { supabase } from "../services/supabaseClient";
 import {
   Home, User, Bookmark, FileText, ShieldCheck, Settings,
   LogOut, PlusSquare, LayoutDashboard, PanelLeftClose, PanelLeftOpen,} from "lucide-react";

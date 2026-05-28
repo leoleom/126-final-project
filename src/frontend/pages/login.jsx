@@ -3,6 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import AuthLayout from "../components/authLayout";
 import { loginUser } from "../utils/apiUtils";
+import { supabase } from "../services/supabaseClient";
 
 function Login({ setUser }) {
   const navigate = useNavigate();
@@ -30,7 +31,24 @@ function Login({ setUser }) {
         return;
       }
 
-      // Backend handles Supabase authentication, just set user and navigate
+      const email = data.user?.email;
+      if (!email) {
+        toast.error("Login failed. User email not found.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (supabaseError) {
+        toast.error(supabaseError.message || "Supabase session failed.");
+        setLoading(false);
+        return;
+      }
+
       setUser(data.user);
       toast.success("Logged in successfully.");
       navigate("/feed");
