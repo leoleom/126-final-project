@@ -55,7 +55,7 @@ function Feed({ user }) {
         id: post.id,
         authorId: post.author_id,
         username: post.is_anonymous
-          ? "Anonymous"
+          ? "Anonymous" + (post.author_id === user?.id ? " (You)" : "")
           : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`,
         profilePicture: post.is_anonymous ? null : post.author?.avatar_url,
         createdAt: post.created_at,
@@ -63,8 +63,7 @@ function Feed({ user }) {
         body: post.content,
         tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
         likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
-        likedByUser:
-          post.votes?.some((v) => v.vote_type === "upvote" && v.author_id === user?.id) ?? false,
+        likedByUser: post.votes?.some((v) => v.vote_type === "upvote" && v.author_id === user?.id) ?? false,
         bookmarkedByUser: bookmarkedPostIds.has(post.id),
         views: post.views ?? 0,
         comments: post.comments?.length ?? 0,

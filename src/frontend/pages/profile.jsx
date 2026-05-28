@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../components/navbar";
 import PostCard from "../components/postCard";
-import { getUserPosts, getUserById } from "../utils/apiUtils";
+import { getUserPosts, toggleVote, getUserById } from "../utils/apiUtils";
 import treesImage from "../public/ll-trees.png";
 
 function Profile({ user }) {
@@ -65,7 +65,9 @@ function Profile({ user }) {
         time: formatTimeAgo(post.created_at),
         tags: post.post_tags?.map((pt) => pt.tags?.name).filter(Boolean) ?? [],
         likes: post.votes?.filter((v) => v.vote_type === "upvote").length ?? 0,
+        likedByUser: post.votes?.some((v) => v.vote_type === "upvote" && v.author_id === user?.id) ?? false,
         views: post.views ?? 0,
+        comments: post.comments?.length ?? 0,
       }));
       setPosts(shaped);
     } catch (error) {
@@ -73,6 +75,26 @@ function Profile({ user }) {
       toast.error("Unable to load profile posts.");
     }
     setLoading(false);
+  }
+
+  async function handleLike(postId) {
+    if (!user) {toast.error("Please log in to like posts."); return;}
+
+    try {
+      const { ok, data } = await toggleVote(postId, user.id);
+
+      if (!ok) {toast.error(data.error || "Unable to update reaction."); return;}
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+          return {...post, likedByUser: data.liked, likes: data.liked ? post.likes + 1 : Math.max(post.likes - 1, 0),};
+        })
+      );
+    } catch (error) {
+      console.error("Vote failed:", error);
+      toast.error("Unable to update reaction.");
+    }
   }
 
   function formatTimeAgo(createdAt) {
@@ -233,13 +255,15 @@ function Profile({ user }) {
                   >
                     <PostCard
                       id={post.id}
-                      username={`@${profileUser?.username}`}
-                      profilePicture={profileUser?.avatar_url}
+                      username={post.username}
+                      profilePicture={post.profilePicture}
                       time={post.time}
                       title={post.title}
                       body={post.body}
                       tags={post.tags}
                       likes={post.likes}
+                      likedByUser={post.likedByUser}
+                      onLike={() => handleLike(post.id)}
                       views={post.views}
                     />
                   </div>

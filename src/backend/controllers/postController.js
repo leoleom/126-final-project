@@ -109,7 +109,9 @@ const deletePost = async (req, res) => {
 
   const postDelete = await supabase
     .from("posts")
-    .delete()
+    .update({
+      status: "deleted"
+    })
     .eq("id", postId)
     .select();
 

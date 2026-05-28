@@ -209,9 +209,9 @@ function ExpandedPost({ user }) {
     post.votes?.some(
       (v) => v.vote_type === "upvote" && v.author_id === user?.id
     ) ?? false;
-
+  const isRemoved = post.status === "deleted";
   const authorName = post.is_anonymous
-    ? "Anonymous"
+    ? "Anonymous" + (post.author_id === user?.id ? " (You)" : "")
     : `@${post.author?.username ?? post.author?.display_name ?? "unknown"}`;
 
   return (
@@ -229,7 +229,7 @@ function ExpandedPost({ user }) {
         />
 
         <div className="grid min-w-0 grid-rows-[112px_1fr]">
-          <TopBar user={user} searchQuery="" setSearchQuery={() => { }} />
+          <TopBar user={user} searchQuery="" setSearchQuery={() => {}} showSearch={false}/>
 
           <div className="min-w-0 px-6 py-8 xl:px-10 2xl:px-14">
             <main className="mx-auto grid max-w-[1320px] grid-cols-1 gap-8 2xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -241,78 +241,95 @@ function ExpandedPost({ user }) {
                   Back to all posts
                 </Link>
 
-                <article className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
-                  <div className="flex items-center gap-4">
-                    {!post.is_anonymous && post.author ? (
-                      <Link to={`/profile/${post.author.id}`} className="shrink-0">
-                        {post.author.avatar_url ? (
-                          <img
-                            src={post.author.avatar_url}
-                            alt={authorName}
-                            className="h-14 w-14 rounded-full object-cover transition hover:opacity-80"
-                          />
-                        ) : (
-                          <div className="h-14 w-14 rounded-full bg-[#c5cbc7] transition hover:opacity-80" />
-                        )}
-                      </Link>
-                    ) : (
-                      <div className="h-14 w-14 rounded-full bg-[#c5cbc7]" />
-                    )}
+<article className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
+  {isRemoved ? (
+    <div className="py-20 text-center">
+      <h1 className="text-3xl font-bold text-[#5F6B63]">
+        This post has been removed.
+      </h1>
 
-                    <div>
-                      {!post.is_anonymous && post.author ? (
-                        <Link
-                          to={`/profile/${post.author.id}`}
-                          className="text-sm font-bold text-[#26322B] transition hover:text-[#3F6F4F] hover:underline"
-                        >
-                          {authorName}
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-bold text-[#26322B]">
-                          {authorName}
-                        </p>
-                      )}
-                      <p className="text-xs font-semibold text-[#8B968F]">
-                        {formatTimeAgo(post.created_at)}
-                      </p>
-                    </div>
-                  </div>
+      <p className="mt-4 text-sm text-[#8B968F]">
+        The content and interactions are no longer available.
+      </p>
+    </div>
+  ) : (
+    <>
+      <div className="flex items-center gap-4">
+        {!post.is_anonymous && post.author ? (
+          <Link to={`/profile/${post.author.id}`} className="shrink-0">
+            {post.author.avatar_url ? (
+              <img
+                src={post.author.avatar_url}
+                alt={authorName}
+                className="h-14 w-14 rounded-full object-cover transition hover:opacity-80"
+              />
+            ) : (
+              <div className="h-14 w-14 rounded-full bg-[#c5cbc7] transition hover:opacity-80" />
+            )}
+          </Link>
+        ) : (
+          <div className="h-14 w-14 rounded-full bg-[#c5cbc7]" />
+        )}
 
-                  <h1 className="mt-8 break-words text-3xl font-bold tracking-tight text-[#26322B]">
-                    {post.title}
-                  </h1>
+        <div>
+          {!post.is_anonymous && post.author ? (
+            <Link
+              to={`/profile/${post.author.id}`}
+              className="text-sm font-bold text-[#26322B] transition hover:text-[#3F6F4F] hover:underline"
+            >
+              {authorName}
+            </Link>
+          ) : (
+            <p className="text-sm font-bold text-[#26322B]">
+              {authorName}
+            </p>
+          )}
 
-                  {tags.length > 0 && (
-                    <div className="mt-6 flex flex-wrap gap-2.5">
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-[#dfe8e2] px-4 py-2 text-xs font-bold text-[#3F6F4F]"
-                        >
-                          # {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+          <p className="text-xs font-semibold text-[#8B968F]">
+            {formatTimeAgo(post.created_at)}
+          </p>
+        </div>
+      </div>
 
-                  <div
-                    className="prose prose-sm mt-6 max-w-none break-words leading-7 text-[#374151]"
-                    dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
-                  />
+      <h1 className="mt-8 break-words text-3xl font-bold tracking-tight text-[#26322B]">
+        {post.title}
+      </h1>
 
-                  <div className="mt-8 flex flex-wrap gap-6 border-t border-[#d9e1db] pt-5 text-sm font-bold text-[#7f8b84]">
-                    <button
-                      type="button"
-                      onClick={handleLike}
-                      className={`transition ${likedByUser ? "text-red-500" : "hover:text-red-400"
-                        }`}
-                    >
-                      {likes} Likes
-                    </button>
+      {tags.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-2.5">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#dfe8e2] px-4 py-2 text-xs font-bold text-[#3F6F4F]"
+            >
+              # {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
-                    <span>{views} Views</span>
-                    <span>{comments.length} Comments</span>
-                  </div>
+      <div
+        className="prose prose-sm mt-6 max-w-none break-words leading-7 text-[#374151]"
+        dangerouslySetInnerHTML={{ __html: post.content ?? "" }}
+      />
+
+      <div className="mt-8 flex flex-wrap gap-6 border-t border-[#d9e1db] pt-5 text-sm font-bold text-[#7f8b84]">
+        <button
+          type="button"
+          onClick={handleLike}
+          className={`transition ${
+            likedByUser ? "text-red-500" : "hover:text-red-400"
+          }`}
+        >
+          {likes} Likes
+        </button>
+
+        <span>{views} Views</span>
+        <span>{comments.length} Comments</span>
+      </div>
+    </>
+  )}
+</article>
                 </article>
 
                 <section className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
