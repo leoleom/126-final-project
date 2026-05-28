@@ -330,7 +330,6 @@ function ExpandedPost({ user }) {
     </>
   )}
 </article>
-                </article>
 
                 <section className="mt-8 rounded-[1.5rem] border border-[#d4ddd6] bg-[#eef3ef] p-6 shadow-[0_14px_35px_rgba(63,111,79,0.08)] sm:p-8">
                   <h2 className="text-lg font-bold text-[#26322B]">
